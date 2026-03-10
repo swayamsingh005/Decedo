@@ -73,7 +73,10 @@ example_questions = [
 ]
 
 selected_example = st.selectbox("Try an example question", example_questions)
-
+decision_type = st.selectbox(
+    "Decision Type",
+    ["Career", "Business", "Money", "Studies", "Personal"]
+)
 question = st.text_area(
     "Enter your decision question:",
     value=selected_example,
@@ -90,6 +93,8 @@ if st.button("Analyze Decision", type= "primary",use_container_width=True):
  You are Decedo, an AI decision intelligence assistant.
 
 Analyze the user's decision question clearly and briefly.
+Decision Type:
+{decision_type}
 
 User question:
 {question}
@@ -166,6 +171,7 @@ if st.session_state.history:
         with st.expander(item["question"]):
 
             st.write(item["answer"])
+
 
 
 
