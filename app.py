@@ -155,7 +155,7 @@ Rules:
                     </div>
                     """, unsafe_allow_html=True)
 
-        except Exception 
+        except Exception:
             st.error("Decedo is facing high traffic right now. Please try again later.")
             
     else:
@@ -171,6 +171,7 @@ if st.session_state.history:
         with st.expander(item["question"]):
 
             st.write(item["answer"])
+
 
 
 
