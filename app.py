@@ -174,7 +174,7 @@ Rules:
 - Avoid long paragraphs
 - Be concise
 """
-        try:
+try:
             with st.spinner("Analyzing your decision..."):
                 response = client.models.generate_content(
                     model="gemini-2.5-flash",
@@ -221,6 +221,7 @@ if st.session_state.history:
         with st.expander(item["question"]):
 
             st.write(item["answer"])
+
 
 
 
