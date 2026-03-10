@@ -204,11 +204,10 @@ try:
                         <p>{content}</p>
                     </div>
                     """, unsafe_allow_html=True)
-
-        except Exception:
-            st.error("Decedo is facing high traffic right now. Please try again later.")
+except Exception:
+   st.error("Decedo is facing high traffic right now. Please try again later.")
             
-    else:
+else:
         st.warning("Please enter a decision question first.")
 
 # =========================
@@ -221,6 +220,7 @@ if st.session_state.history:
         with st.expander(item["question"]):
 
             st.write(item["answer"])
+
 
 
 
