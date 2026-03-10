@@ -86,36 +86,39 @@ question = st.text_area(
 # =========================
 if st.button("Analyze Decision", type= "primary",use_container_width=True):
     if question.strip():
-        prompt = f"""
-You are an expert decision strategist.
+ prompt = f"""
+ You are Decedo, an AI decision intelligence assistant.
 
-Analyze the user's decision question in a clear and structured way.
+Analyze the user's decision question clearly and briefly.
 
-Give the response in this exact format:
-
-## Problem Understanding
-Explain what the decision is really about.
-
-## Possible Options
-List the realistic options.
-
-## Pros
-List the advantages.
-
-## Cons
-List the disadvantages.
-
-## Risk Level
-Write one of: Low / Medium / High
-Also explain why.
-
-## Final Recommendation
-Give a practical final recommendation.
-
-User's decision question:
+User question:
 {question}
-"""
 
+Respond in exactly this format:
+
+Decision Summary:
+Write 1 short sentence.
+
+Best Option:
+Write the best choice in 1 short sentence.
+
+Why:
+- Give 2 short bullet points only
+
+Risk Level:
+Low / Medium / High
+
+Decision Score:
+Score out of 10
+
+First Next Step:
+Give 1 practical next action.
+
+Rules:
+- Keep the answer under 100 words
+- Avoid long paragraphs
+- Be concise
+"""
         try:
             with st.spinner("Analyzing your decision..."):
                 response = client.models.generate_content(
@@ -163,4 +166,5 @@ if st.session_state.history:
         with st.expander(item["question"]):
 
             st.write(item["answer"])
+
 
