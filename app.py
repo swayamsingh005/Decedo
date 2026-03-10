@@ -77,6 +77,8 @@ decision_type = st.selectbox(
     "Decision Type",
     ["Career", "Business", "Money", "Studies", "Personal"]
 )
+option_a = st.text_input("Option A (optional)", placeholder="Example: Learn coding first")
+option_b = st.text_input("Option B (optional)", placeholder="Example: Learn marketing first")
 question = st.text_area(
     "Enter your decision question:",
     value=selected_example,
@@ -89,10 +91,58 @@ question = st.text_area(
 # =========================
 if st.button("Analyze Decision", type= "primary",use_container_width=True):
     if question.strip():
-        prompt = f"""
- You are Decedo, an AI decision intelligence assistant.
+        if option_a.strip() and option_b.strip():
+    prompt = f"""
+You are Decedo, an AI decision intelligence assistant.
+
+Analyze this decision as a comparison.
+
+Decision Type:
+{decision_type}
+
+User question:
+{question}
+
+Option A:
+{option_a}
+
+Option B:
+{option_b}
+
+Respond in exactly this format:
+
+Comparison Summary:
+Write 1 short sentence.
+
+Option A Score:
+Score out of 10
+
+Option B Score:
+Score out of 10
+
+Better Option:
+Choose the stronger option in 1 short sentence.
+
+Why:
+- Give 2 short bullet points only
+
+Risk Comparison:
+Low / Medium / High
+
+First Next Step:
+Give 1 practical next action.
+
+Rules:
+- Keep answer under 120 words
+- Avoid long paragraphs
+- Be concise
+"""
+else:
+    prompt = f"""
+You are Decedo, an AI decision intelligence assistant.
 
 Analyze the user's decision question clearly and briefly.
+
 Decision Type:
 {decision_type}
 
@@ -120,7 +170,7 @@ First Next Step:
 Give 1 practical next action.
 
 Rules:
-- Keep the answer under 100 words
+- Keep answer under 100 words
 - Avoid long paragraphs
 - Be concise
 """
@@ -171,6 +221,7 @@ if st.session_state.history:
         with st.expander(item["question"]):
 
             st.write(item["answer"])
+
 
 
 
