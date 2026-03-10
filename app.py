@@ -1,5 +1,5 @@
 import streamlit as st
-from google import genai
+import google.genai as genai
 
 # =========================
 # CONFIG
@@ -161,4 +161,5 @@ if st.session_state.history:
 
     for item in reversed(st.session_state.history[-5:]):
         with st.expander(item["question"]):
+
             st.write(item["answer"])
