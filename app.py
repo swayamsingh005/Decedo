@@ -4,7 +4,7 @@ import google.genai as genai
 # =========================
 # CONFIG
 # =========================
-client = genai.Client(api_key=st.secrets["AIzaSyCqXEX0Jy4icPpEYyR7LVj0WZvBEmSA4Dg"])
+client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
 st.set_page_config(
     page_title="Decedo",
@@ -163,3 +163,4 @@ if st.session_state.history:
         with st.expander(item["question"]):
 
             st.write(item["answer"])
+
