@@ -92,7 +92,7 @@ question = st.text_area(
 if st.button("Analyze Decision", type= "primary",use_container_width=True):
     if question.strip():
         if option_a.strip() and option_b.strip():
-    prompt = f"""
+                prompt = f"""
 You are Decedo, an AI decision intelligence assistant.
 
 Analyze this decision as a comparison.
@@ -221,6 +221,7 @@ if st.session_state.history:
         with st.expander(item["question"]):
 
             st.write(item["answer"])
+
 
 
 
