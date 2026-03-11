@@ -127,7 +127,9 @@ Decision Type:
 User question:
 {question}
 
-Respond in exactly this format:
+Respond in exactly this format.
+Do not combine sections on one line.
+Write each heading on its own seperate line exactly as written below.
 
 Decision Summary:
 Write 1 short sentence.
@@ -171,22 +173,43 @@ Rules:
                 "answer": result
             })
 
-            st.markdown("## 🧠 AI Decision Analysis")
-
             sections = {}
-            current_title = None
+current_title = None
 
-            for line in result.splitlines():
-                line = line.strip()
+known_titles = [
+    "Decision Summary",
+    "Comparison Summary",
+    "AI 1 for Option A",
+    "AI 2 for Option B",
+    "Best Option",
+    "Better Option",
+    "Option A Score",
+    "Option B Score",
+    "Confidence Level",
+    "Why",
+    "Risk Level",
+    "Risk Comparison",
+    "Decision Score",
+    "First Next Step"
+]
 
-                if not line:
-                    continue
+for line in result.splitlines():
+    line = line.strip()
 
-                if line.endswith(":") and len(line) < 40:
-                    current_title = line[:-1]
-                    sections[current_title] = ""
-                elif current_title:
-                    sections[current_title] += line + "\n"
+    if not line:
+        continue
+
+    matched_title = None
+    for title in known_titles:
+        if line == f"{title}:":
+            matched_title = title
+            break
+
+    if matched_title:
+        current_title = matched_title
+        sections[current_title] = ""
+    elif current_title:
+        sections[current_title] += line + "\n"
 
             summary = sections.get("Decision Summary", sections.get("Comparison Summary", "Not available")).strip()
             best_option = sections.get("Best Option", sections.get("Better Option", "Not available")).strip()
@@ -257,6 +280,7 @@ if st.session_state.history:
 
         with st.expander(item["question"]):
             st.write(item["answer"])
+
 
 
 
