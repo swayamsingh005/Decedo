@@ -217,8 +217,8 @@ Rules:
                     confidence_number = int(confidence_level.replace("%","").strip())
                     st.markdown("### Confidence Meter")
                     st.progress(confidence_number)
-    except:
-        pass
+                 except:
+                     pass
 
             if "Option A Score" in sections or "Option B Score" in sections:
 
@@ -260,5 +260,6 @@ if st.session_state.history:
 
         with st.expander(item["question"]):
             st.write(item["answer"])
+
 
 
