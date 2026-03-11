@@ -242,22 +242,24 @@ Rules:
 
             st.markdown("### Decision Lenses")
 
-lens_col1, lens_col2 = st.columns(2)
+            lens_col1, lens_col2 = st.columns(2)
 
-with lens_col1:
-    st.markdown("**Market Lens**")
-    st.write(market_lens if market_lens else "Not available")
+            with lens_col1:
+                st.markdown("**Market Lens**")
+                st.write(market_lens if market_lens else "Not available")
 
-    st.markdown("**Execution Lens**")
-    st.write(execution_lens if execution_lens else "Not available")
+                st.markdown("**Execution Lens**")
+                st.write(execution_lens if execution_lens else "Not available")
 
-with lens_col2:
-    st.markdown("**Risk Lens**")
-    st.write(risk_lens if risk_lens else "Not available")
+            with lens_col2:
+                st.markdown("**Risk Lens**")
+                st.write(risk_lens if risk_lens else "Not available")
 
-    st.markdown("**Growth Lens**")
-    st.write(growth_lens if growth_lens else "Not available")
+                st.markdown("**Growth Lens**")
+                st.write(growth_lens if growth_lens else "Not available")
+
             col1, col2, col3, col4 = st.columns(4)
+
             col1.metric("Best Choice", best_option)
             col2.metric("Risk Level", risk_level)
             col3.metric("Score", decision_score)
@@ -270,7 +272,7 @@ with lens_col2:
                     st.progress(confidence_number)
                 except:
                     pass
-                    
+
             if "Option A Score" in sections or "Option B Score" in sections:
                 st.markdown("### Comparison Scores")
                 c1, c2 = st.columns(2)
@@ -294,7 +296,7 @@ with lens_col2:
                 st.write(sections["Why"].strip())
 
             st.markdown("### First Next Step")
-            st.success(next_step)                                            
+            st.success(next_step)
                    
         except Exception as e:
              st.error(f"Real error: {e}")
@@ -316,6 +318,7 @@ if st.session_state.history:
 
         with st.expander(item["question"]):
             st.write(item["answer"])
+
 
 
 
