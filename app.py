@@ -219,9 +219,8 @@ Rules:
             st.markdown("### First Next Step")
             st.success(next_step)                                            
                    
-        except Exception:
-
-            st.error("Decedo is facing high traffic right now. Please try again later.")
+        except Exception as e:
+             st.error(f"Real error: {e}")
 
     else:
 
@@ -240,6 +239,7 @@ if st.session_state.history:
 
         with st.expander(item["question"]):
             st.write(item["answer"])
+
 
 
 
