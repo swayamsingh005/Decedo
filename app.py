@@ -10,7 +10,55 @@ st.set_page_config(
     page_icon="🧠",
     layout="wide"
 )
+st.markdown("""
+<style>
+    .main {
+        background-color: #f8fafc;
+    }
 
+    section[data-testid="stSidebar"] {
+        background-color: #ffffff;
+        border-right: 1px solid #e5e7eb;
+    }
+
+    div[data-testid="stMetric"] {
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        padding: 15px;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    h1, h2, h3 {
+        color: #111827;
+    }
+
+    p, label, div {
+        color: #374151;
+    }
+
+    .stButton>button {
+        border-radius: 12px;
+        font-weight: 600;
+        height: 3em;
+    }
+
+    .stTextInput>div>div>input,
+    .stTextArea textarea,
+    .stSelectbox>div>div {
+        border-radius: 12px;
+    }
+
+    .stAlert {
+        border-radius: 14px;
+    }
+</style>
+""", unsafe_allow_html=True)
 # ===============================
 # API SETUP
 # ===============================
@@ -287,3 +335,4 @@ if st.session_state.history:
     for item in reversed(st.session_state.history[-5:]):
         with st.expander(item["question"]):
             st.write(item["answer"])
+
