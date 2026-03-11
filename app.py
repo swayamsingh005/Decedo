@@ -163,7 +163,7 @@ Rules:
             st.session_state.history.append({
                 "question": question,
                 "answer": result
-            }
+            })
 
             st.markdown("## 🧠 AI Decision Analysis")
 
@@ -240,6 +240,7 @@ if st.session_state.history:
 
         with st.expander(item["question"]):
             st.write(item["answer"])
+
 
 
 
