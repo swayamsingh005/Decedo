@@ -11,9 +11,6 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🧠 Decedo")
-st.subheader("AI Decision Intelligence Assistant")
-
 # ===============================
 # API SETUP
 # ===============================
@@ -27,32 +24,50 @@ if "history" not in st.session_state:
     st.session_state.history = []
 
 # ===============================
-# INPUT SECTION
+# SIDEBAR INPUT PANEL
 # ===============================
-decision_type = st.selectbox(
-    "Decision Type",
-    ["Career", "Business", "Investment", "Life"]
-)
+with st.sidebar:
+    st.title("🧠 Decedo")
+    st.caption("AI Decision Intelligence Platform")
+    st.divider()
 
-option_a = st.text_input(
-    "Option A (optional)",
-    placeholder="Example: Learn coding first"
-)
+    decision_type = st.selectbox(
+        "Decision Type",
+        ["Career", "Business", "Investment", "Life"]
+    )
 
-option_b = st.text_input(
-    "Option B (optional)",
-    placeholder="Example: Learn marketing first"
-)
+    option_a = st.text_input(
+        "Option A (optional)",
+        placeholder="Example: Learn coding first"
+    )
 
-question = st.text_area(
-    "Enter your decision question:",
-    placeholder="Example: Should I start a startup or take a job?"
-)
+    option_b = st.text_input(
+        "Option B (optional)",
+        placeholder="Example: Learn marketing first"
+    )
+
+    question = st.text_area(
+        "Decision Question",
+        placeholder="Example: Should I start a startup or take a job?"
+    )
+
+    analyze = st.button("Analyze Decision", type="primary", use_container_width=True)
+
+    st.divider()
+    st.caption("Structured reasoning • Decision lenses • AI debate")
 
 # ===============================
-# ANALYZE BUTTON
+# MAIN HEADER
 # ===============================
-if st.button("Analyze Decision", type="primary", use_container_width=True):
+st.title("🧠 Decedo")
+st.subheader("AI Operating System for Decisions")
+st.caption("Make better decisions with structured AI reasoning, confidence scoring, and strategic analysis.")
+st.divider()
+
+# ===============================
+# ANALYZE BUTTON LOGIC
+# ===============================
+if analyze:
 
     if question.strip():
 
@@ -182,29 +197,32 @@ Rules:
             # ===============================
             # RESULT UI
             # ===============================
-            st.markdown("## 🧠 AI Decision Analysis")
+            st.markdown("## 📊 Decision Dashboard")
 
+            # Summary
             st.markdown("### Decision Summary")
             st.info(summary)
 
+            # Decision Lenses
             st.markdown("### Decision Lenses")
-
             lens_col1, lens_col2 = st.columns(2)
 
             with lens_col1:
-                st.markdown("**Market Lens**")
+                st.markdown("#### Market Lens")
                 st.write(market_lens if market_lens else "Not available")
 
-                st.markdown("**Execution Lens**")
+                st.markdown("#### Execution Lens")
                 st.write(execution_lens if execution_lens else "Not available")
 
             with lens_col2:
-                st.markdown("**Risk Lens**")
+                st.markdown("#### Risk Lens")
                 st.write(risk_lens if risk_lens else "Not available")
 
-                st.markdown("**Growth Lens**")
+                st.markdown("#### Growth Lens")
                 st.write(growth_lens if growth_lens else "Not available")
 
+            # Metrics
+            st.markdown("### Decision Metrics")
             col1, col2, col3, col4 = st.columns(4)
 
             col1.metric("Best Choice", best_option)
@@ -215,35 +233,38 @@ Rules:
             if confidence_level and confidence_level != "Not available":
                 try:
                     confidence_number = int(str(confidence_level).replace("%", "").strip())
-                    st.markdown("### Confidence Meter")
+                    st.markdown("#### Confidence Meter")
                     st.progress(confidence_number)
                 except:
                     pass
 
+            # Comparison Scores
             if "option_a_score" in data or "option_b_score" in data:
                 st.markdown("### Comparison Scores")
                 c1, c2 = st.columns(2)
                 c1.metric("Option A Score", data.get("option_a_score", "N/A"))
                 c2.metric("Option B Score", data.get("option_b_score", "N/A"))
 
+            # AI Debate
             if "ai_1_for_option_a" in data and "ai_2_for_option_b" in data:
                 st.markdown("### 🥊 AI Debate Mode")
-
                 d1, d2 = st.columns(2)
 
                 with d1:
-                    st.markdown("#### AI 1 - Option A")
+                    st.markdown("#### AI 1 — Option A")
                     st.write(data.get("ai_1_for_option_a", ""))
 
                 with d2:
-                    st.markdown("#### AI 2 - Option B")
+                    st.markdown("#### AI 2 — Option B")
                     st.write(data.get("ai_2_for_option_b", ""))
 
+            # Why
             if why_points:
                 st.markdown("### Why")
                 for point in why_points:
                     st.write(f"• {point}")
 
+            # Next Step
             st.markdown("### First Next Step")
             st.success(next_step)
 
@@ -260,7 +281,7 @@ Rules:
 # RECENT DECISIONS
 # ===============================
 if st.session_state.history:
-    st.markdown("---")
+    st.divider()
     st.markdown("## 📜 Recent Decisions")
 
     for item in reversed(st.session_state.history[-5:]):
