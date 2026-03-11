@@ -95,7 +95,18 @@ Option B Score:
 Score out of 10
 
 Better Option:
-Choose the stronger option in 1 short sentence.
+Write the best choice in 1 short sentence.
+Market Lens:
+Explain market demand perspective in 1 short sentence.
+
+Execution Lens:
+Explain which option is easier to execute in 1 short sentence.
+
+Risk Lens:
+Explain the main risk in 1 short sentence.
+
+Growth Lens:
+Explain which option scales better long term in 1 short sentences
 
 Confidence Level:
 Give a confidence percentage from 0 to 100%
@@ -190,6 +201,10 @@ Rules:
                 "Risk Level",
                 "Risk Comparison",
                 "Decision Score",
+                "Market Lens"
+                "Execution Lens"
+                "Risk Lens"
+                "Growth Lens"
                 "First Next Step"
             ]
             
@@ -217,10 +232,31 @@ Rules:
             decision_score = sections.get("Decision Score", sections.get("Option A Score", "Not available")).strip()
             next_step = sections.get("First Next Step", "Not available").strip()
             confidence_level = sections.get("Confidence Level", "Not available").strip()
+            market_lens = sections.get("Market Lens", "").strip()
+            execution_lens = sections.get("Execution Lens", "").strip()
+            risk_lens = sections.get("Risk Lens", "").strip()
+            growth_lens = sections.get("Growth Lens", "").strip()
 
             st.markdown("### Decision Summary")
             st.info(summary)
 
+            st.markdown("### Decision Lenses")
+
+lens_col1, lens_col2 = st.columns(2)
+
+with lens_col1:
+    st.markdown("**Market Lens**")
+    st.write(market_lens if market_lens else "Not available")
+
+    st.markdown("**Execution Lens**")
+    st.write(execution_lens if execution_lens else "Not available")
+
+with lens_col2:
+    st.markdown("**Risk Lens**")
+    st.write(risk_lens if risk_lens else "Not available")
+
+    st.markdown("**Growth Lens**")
+    st.write(growth_lens if growth_lens else "Not available")
             col1, col2, col3, col4 = st.columns(4)
             col1.metric("Best Choice", best_option)
             col2.metric("Risk Level", risk_level)
@@ -280,6 +316,7 @@ if st.session_state.history:
 
         with st.expander(item["question"]):
             st.write(item["answer"])
+
 
 
 
