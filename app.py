@@ -165,17 +165,12 @@ Rules:
                 "answer": result
             })
 
-            # ===============================
-            # V3 RESULT CARDS
-            # ===============================
-
-            st.markdown("## 🧠 AI Decision Analysis")
+                    st.markdown("## 🧠 AI Decision Analysis")
 
             sections = {}
             current_title = None
 
             for line in result.splitlines():
-
                 line = line.strip()
 
                 if not line:
@@ -184,22 +179,13 @@ Rules:
                 if line.endswith(":") and len(line) < 40:
                     current_title = line[:-1]
                     sections[current_title] = ""
-
                 elif current_title:
                     sections[current_title] += line + "\n"
 
-            summary = sections.get("Decision Summary",
-                      sections.get("Comparison Summary", "Not available")).strip()
-
-            best_option = sections.get("Best Option",
-                         sections.get("Better Option", "Not available")).strip()
-
-            risk_level = sections.get("Risk Level",
-                         sections.get("Risk Comparison", "Not available")).strip()
-
-            decision_score = sections.get("Decision Score",
-                             sections.get("Option A Score", "Not available")).strip()
-
+            summary = sections.get("Decision Summary", sections.get("Comparison Summary", "Not available")).strip()
+            best_option = sections.get("Best Option", sections.get("Better Option", "Not available")).strip()
+            risk_level = sections.get("Risk Level", sections.get("Risk Comparison", "Not available")).strip()
+            decision_score = sections.get("Decision Score", sections.get("Option A Score", "Not available")).strip()
             next_step = sections.get("First Next Step", "Not available").strip()
             confidence_level = sections.get("Confidence Level", "Not available").strip()
 
@@ -207,29 +193,24 @@ Rules:
             st.info(summary)
 
             col1, col2, col3, col4 = st.columns(4)
-
             col1.metric("Best Choice", best_option)
             col2.metric("Risk Level", risk_level)
             col3.metric("Score", decision_score)
             col4.metric("Confidence", confidence_level)
-if confidence_level and confidence_level != "Not available":
-   try:
-      confidence_number = int(confidence_level.replace("%", "").strip())
-      st.markdown("### Confidence Meter")
-      st.progress(confidence_number)
-  except:
-      pass
-if "Option A Score" in sections or "Option B Score" in sections:
 
-    st.markdown("### Comparison Scores")
+            if confidence_level and confidence_level != "Not available":
+                try:
+                    confidence_number = int(confidence_level.replace("%", "").strip())
+                    st.markdown("### Confidence Meter")
+                    st.progress(confidence_number)
+                except:
+                    pass
 
-    c1, c2 = st.columns(2)
-
-    c1.metric("Option A Score",
-              sections.get("Option A Score", "N/A").strip())
-
-    c2.metric("Option B Score",
-              sections.get("Option B Score", "N/A").strip())
+            if "Option A Score" in sections or "Option B Score" in sections:
+                st.markdown("### Comparison Scores")
+                c1, c2 = st.columns(2)
+                c1.metric("Option A Score", sections.get("Option A Score", "N/A").strip())
+                c2.metric("Option B Score", sections.get("Option B Score", "N/A").strip())
 
             if "Why" in sections:
                 st.markdown("### Why")
@@ -259,6 +240,7 @@ if st.session_state.history:
 
         with st.expander(item["question"]):
             st.write(item["answer"])
+
 
 
 
