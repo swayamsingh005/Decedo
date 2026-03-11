@@ -232,9 +232,8 @@ Rules:
             if "Why" in sections:
                         st.markdown("### Why")
                         st.write(sections["Why"].strip())
-        
-                    st.markdown("### First Next Step")
-                    st.success(next_step)                                            
+st.markdown("### First Next Step")
+st.success(next_step)                                            
                    
         except Exception as e:
              st.error(f"Real error: {e}")
@@ -256,6 +255,7 @@ if st.session_state.history:
 
         with st.expander(item["question"]):
             st.write(item["answer"])
+
 
 
 
