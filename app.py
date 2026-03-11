@@ -91,6 +91,8 @@ Score out of 10
 Better Option:
 Choose the stronger option in 1 short sentence.
 
+Confidence Level:
+Give a confidence percentage from 0 to 100%
 Why:
 • Give 2 short bullet points only
 
@@ -127,6 +129,8 @@ Write 1 short sentence.
 Best Option:
 Write the best choice in 1 short sentence.
 
+Confidence Level:
+Give a confidence percentage from 0 to 100%
 Why:
 • Give 2 short bullet points only
 
@@ -197,15 +201,24 @@ Rules:
                              sections.get("Option A Score", "Not available")).strip()
 
             next_step = sections.get("First Next Step", "Not available").strip()
+            confidence_level = sections.get("Confidence Level", "Not available").strip()
 
             st.markdown("### Decision Summary")
             st.info(summary)
 
-            col1, col2, col3 = st.columns(3)
+            col1, col2, col3, col4 = st.columns(4)
 
             col1.metric("Best Choice", best_option)
             col2.metric("Risk Level", risk_level)
             col3.metric("Score", decision_score)
+            col4.metric("Confidence", confidence_level)
+            if confidence_level and confidence_level != "Not available":
+    try:
+        confidence_number = int(confidence_level.replace("%","").strip())
+        st.markdown("### Confidence Meter")
+        st.progress(confidence_number)
+    except:
+        pass
 
             if "Option A Score" in sections or "Option B Score" in sections:
 
@@ -247,3 +260,4 @@ if st.session_state.history:
 
         with st.expander(item["question"]):
             st.write(item["answer"])
+
