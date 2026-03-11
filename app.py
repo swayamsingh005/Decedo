@@ -163,9 +163,9 @@ Rules:
             st.session_state.history.append({
                 "question": question,
                 "answer": result
-            })
+            }
 
-                    st.markdown("## 🧠 AI Decision Analysis")
+            st.markdown("## 🧠 AI Decision Analysis")
 
             sections = {}
             current_title = None
@@ -217,8 +217,8 @@ Rules:
                 st.write(sections["Why"].strip())
 
             st.markdown("### First Next Step")
-            st.success(next_step)
-
+            st.success(next_step)                                            
+                   
         except Exception:
 
             st.error("Decedo is facing high traffic right now. Please try again later.")
@@ -240,6 +240,7 @@ if st.session_state.history:
 
         with st.expander(item["question"]):
             st.write(item["answer"])
+
 
 
 
