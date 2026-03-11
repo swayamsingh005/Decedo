@@ -174,42 +174,42 @@ Rules:
             })
 
             sections = {}
-current_title = None
-
-known_titles = [
-    "Decision Summary",
-    "Comparison Summary",
-    "AI 1 for Option A",
-    "AI 2 for Option B",
-    "Best Option",
-    "Better Option",
-    "Option A Score",
-    "Option B Score",
-    "Confidence Level",
-    "Why",
-    "Risk Level",
-    "Risk Comparison",
-    "Decision Score",
-    "First Next Step"
-]
-
-for line in result.splitlines():
-    line = line.strip()
-
-    if not line:
-        continue
-
-    matched_title = None
-    for title in known_titles:
-        if line == f"{title}:":
-            matched_title = title
-            break
-
-    if matched_title:
-        current_title = matched_title
-        sections[current_title] = ""
-    elif current_title:
-        sections[current_title] += line + "\n"
+            current_title = None
+            
+            known_titles = [
+                "Decision Summary",
+                "Comparison Summary",
+                "AI 1 for Option A",
+                "AI 2 for Option B",
+                "Best Option",
+                "Better Option",
+                "Option A Score",
+                "Option B Score",
+                "Confidence Level",
+                "Why",
+                "Risk Level",
+                "Risk Comparison",
+                "Decision Score",
+                "First Next Step"
+            ]
+            
+            for line in result.splitlines():
+                line = line.strip()
+            
+                if not line:
+                    continue
+            
+                matched_title = None
+                for title in known_titles:
+                    if line == f"{title}:":
+                        matched_title = title
+                        break
+            
+                if matched_title:
+                    current_title = matched_title
+                    sections[current_title] = ""
+                elif current_title:
+                    sections[current_title] += line + "\n"
 
             summary = sections.get("Decision Summary", sections.get("Comparison Summary", "Not available")).strip()
             best_option = sections.get("Best Option", sections.get("Better Option", "Not available")).strip()
@@ -280,6 +280,7 @@ if st.session_state.history:
 
         with st.expander(item["question"]):
             st.write(item["answer"])
+
 
 
 
