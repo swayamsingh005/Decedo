@@ -212,25 +212,24 @@ Rules:
             col2.metric("Risk Level", risk_level)
             col3.metric("Score", decision_score)
             col4.metric("Confidence", confidence_level)
-    if confidence_level and confidence_level != "Not available":
-       try:
-          confidence_number = int(confidence_level.replace("%", "").strip())
-          st.markdown("### Confidence Meter")
-          st.progress(confidence_number)
-      except:
-          pass
+if confidence_level and confidence_level != "Not available":
+   try:
+      confidence_number = int(confidence_level.replace("%", "").strip())
+      st.markdown("### Confidence Meter")
+      st.progress(confidence_number)
+  except:
+      pass
+if "Option A Score" in sections or "Option B Score" in sections:
 
-            if "Option A Score" in sections or "Option B Score" in sections:
+    st.markdown("### Comparison Scores")
 
-                st.markdown("### Comparison Scores")
+    c1, c2 = st.columns(2)
 
-                c1, c2 = st.columns(2)
+    c1.metric("Option A Score",
+              sections.get("Option A Score", "N/A").strip())
 
-                c1.metric("Option A Score",
-                          sections.get("Option A Score", "N/A").strip())
-
-                c2.metric("Option B Score",
-                          sections.get("Option B Score", "N/A").strip())
+    c2.metric("Option B Score",
+              sections.get("Option B Score", "N/A").strip())
 
             if "Why" in sections:
                 st.markdown("### Why")
@@ -260,6 +259,7 @@ if st.session_state.history:
 
         with st.expander(item["question"]):
             st.write(item["answer"])
+
 
 
 
