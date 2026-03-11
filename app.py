@@ -1,4 +1,5 @@
 import streamlit as st
+import json
 from google import genai
 
 # ===============================
@@ -17,7 +18,6 @@ st.subheader("AI Decision Intelligence Assistant")
 # API SETUP
 # ===============================
 API_KEY = st.secrets["GEMINI_API_KEY"]
-
 client = genai.Client(api_key=API_KEY)
 
 # ===============================
@@ -29,7 +29,6 @@ if "history" not in st.session_state:
 # ===============================
 # INPUT SECTION
 # ===============================
-
 decision_type = st.selectbox(
     "Decision Type",
     ["Career", "Business", "Investment", "Life"]
@@ -53,17 +52,15 @@ question = st.text_area(
 # ===============================
 # ANALYZE BUTTON
 # ===============================
-
 if st.button("Analyze Decision", type="primary", use_container_width=True):
 
     if question.strip():
 
         if option_a.strip() and option_b.strip():
-
             prompt = f"""
 You are Decedo, an AI decision intelligence assistant.
 
-Analyze this decision as a structured debate between two AI perspectives.
+Analyze this decision as a structured comparison.
 
 Decision Type:
 {decision_type}
@@ -77,56 +74,34 @@ Option A:
 Option B:
 {option_b}
 
-Respond in exactly this format:
+Respond only in valid JSON.
+Do not write markdown.
+Do not add explanation outside JSON.
 
-Comparison Summary:
-Write 1 short sentence.
-
-AI 1 for option A:
-Write 1 short paragraph supporting Option A.
-
-AI 2 for option B:
-Write 1 short paragraph supporting Option B.
-
-Option A Score:
-Score out of 10
-
-Option B Score:
-Score out of 10
-
-Better Option:
-Write the best choice in 1 short sentence.
-Market Lens:
-Explain market demand perspective in 1 short sentence.
-
-Execution Lens:
-Explain which option is easier to execute in 1 short sentence.
-
-Risk Lens:
-Explain the main risk in 1 short sentence.
-
-Growth Lens:
-Explain which option scales better long term in 1 short sentences
-
-Confidence Level:
-Give a confidence percentage from 0 to 100%
-Why:
-• Give 2 short bullet points only
-
-Risk Comparison:
-Low / Medium / High
-
-First Next Step:
-Give 1 practical next action.
+Use this exact JSON structure:
+{{
+  "comparison_summary": "1 short sentence",
+  "ai_1_for_option_a": "1 short paragraph supporting Option A",
+  "ai_2_for_option_b": "1 short paragraph supporting Option B",
+  "option_a_score": "score out of 10",
+  "option_b_score": "score out of 10",
+  "better_option": "stronger option in 1 short sentence",
+  "market_lens": "1 short sentence",
+  "execution_lens": "1 short sentence",
+  "risk_lens": "1 short sentence",
+  "growth_lens": "1 short sentence",
+  "confidence_level": "percentage like 78%",
+  "risk_comparison": "Low or Medium or High",
+  "why": ["point 1", "point 2"],
+  "first_next_step": "1 practical next action"
+}}
 
 Rules:
-- Keep answer under 100 words
-- Avoid long paragraphs
-- Be concise
+- Keep the full response concise
+- Be direct
+- Use realistic reasoning
 """
-
         else:
-
             prompt = f"""
 You are Decedo, an AI decision intelligence assistant.
 
@@ -138,40 +113,33 @@ Decision Type:
 User question:
 {question}
 
-Respond in exactly this format.
-Do not combine sections on one line.
-Write each heading on its own seperate line exactly as written below.
+Respond only in valid JSON.
+Do not write markdown.
+Do not add explanation outside JSON.
 
-Decision Summary:
-Write 1 short sentence.
-
-Best Option:
-Write the best choice in 1 short sentence.
-
-Confidence Level:
-Give a confidence percentage from 0 to 100%
-Why:
-• Give 2 short bullet points only
-
-Risk Level:
-Low / Medium / High
-
-Decision Score:
-Score out of 10
-
-First Next Step:
-Give 1 practical next action.
+Use this exact JSON structure:
+{{
+  "decision_summary": "1 short sentence",
+  "best_option": "best choice in 1 short sentence",
+  "market_lens": "1 short sentence",
+  "execution_lens": "1 short sentence",
+  "risk_lens": "1 short sentence",
+  "growth_lens": "1 short sentence",
+  "confidence_level": "percentage like 78%",
+  "risk_level": "Low or Medium or High",
+  "decision_score": "score out of 10",
+  "why": ["point 1", "point 2"],
+  "first_next_step": "1 practical next action"
+}}
 
 Rules:
-- Keep answer under 100 words
-- Avoid long paragraphs
-- Be concise
+- Keep the full response concise
+- Be direct
+- Use realistic reasoning
 """
 
         try:
-
             with st.spinner("Analyzing your decision..."):
-
                 response = client.models.generate_content(
                     model="gemini-2.5-flash",
                     contents=prompt,
@@ -184,58 +152,37 @@ Rules:
                 "answer": result
             })
 
-            sections = {}
-            current_title = None
-            
-            known_titles = [
-                "Decision Summary",
-                "Comparison Summary",
-                "AI 1 for Option A",
-                "AI 2 for Option B",
-                "Best Option",
-                "Better Option",
-                "Option A Score",
-                "Option B Score",
-                "Confidence Level",
-                "Why",
-                "Risk Level",
-                "Risk Comparison",
-                "Decision Score",
-                "Market Lens"
-                "Execution Lens"
-                "Risk Lens"
-                "Growth Lens"
-                "First Next Step"
-            ]
-            
-            for line in result.splitlines():
-                line = line.strip()
-            
-                if not line:
-                    continue
-            
-                matched_title = None
-                for title in known_titles:
-                    if line == f"{title}:":
-                        matched_title = title
-                        break
-            
-                if matched_title:
-                    current_title = matched_title
-                    sections[current_title] = ""
-                elif current_title:
-                    sections[current_title] += line + "\n"
+            # ===============================
+            # JSON PARSING
+            # ===============================
+            clean_result = result.strip()
 
-            summary = sections.get("Decision Summary", sections.get("Comparison Summary", "Not available")).strip()
-            best_option = sections.get("Best Option", sections.get("Better Option", "Not available")).strip()
-            risk_level = sections.get("Risk Level", sections.get("Risk Comparison", "Not available")).strip()
-            decision_score = sections.get("Decision Score", sections.get("Option A Score", "Not available")).strip()
-            next_step = sections.get("First Next Step", "Not available").strip()
-            confidence_level = sections.get("Confidence Level", "Not available").strip()
-            market_lens = sections.get("Market Lens", "").strip()
-            execution_lens = sections.get("Execution Lens", "").strip()
-            risk_lens = sections.get("Risk Lens", "").strip()
-            growth_lens = sections.get("Growth Lens", "").strip()
+            if clean_result.startswith("```json"):
+                clean_result = clean_result.replace("```json", "", 1).strip()
+
+            if clean_result.endswith("```"):
+                clean_result = clean_result[:-3].strip()
+
+            data = json.loads(clean_result)
+
+            summary = data.get("decision_summary", data.get("comparison_summary", "Not available"))
+            best_option = data.get("best_option", data.get("better_option", "Not available"))
+            risk_level = data.get("risk_level", data.get("risk_comparison", "Not available"))
+            decision_score = data.get("decision_score", data.get("option_a_score", "Not available"))
+            next_step = data.get("first_next_step", "Not available")
+            confidence_level = data.get("confidence_level", "Not available")
+
+            market_lens = data.get("market_lens", "")
+            execution_lens = data.get("execution_lens", "")
+            risk_lens = data.get("risk_lens", "")
+            growth_lens = data.get("growth_lens", "")
+
+            why_points = data.get("why", [])
+
+            # ===============================
+            # RESULT UI
+            # ===============================
+            st.markdown("## 🧠 AI Decision Analysis")
 
             st.markdown("### Decision Summary")
             st.info(summary)
@@ -267,74 +214,55 @@ Rules:
 
             if confidence_level and confidence_level != "Not available":
                 try:
-                    confidence_number = int(confidence_level.replace("%", "").strip())
+                    confidence_number = int(str(confidence_level).replace("%", "").strip())
                     st.markdown("### Confidence Meter")
                     st.progress(confidence_number)
                 except:
                     pass
 
-            if "Option A Score" in sections or "Option B Score" in sections:
+            if "option_a_score" in data or "option_b_score" in data:
                 st.markdown("### Comparison Scores")
                 c1, c2 = st.columns(2)
-                c1.metric("Option A Score", sections.get("Option A Score", "N/A").strip())
-                c2.metric("Option B Score", sections.get("Option B Score", "N/A").strip())
+                c1.metric("Option A Score", data.get("option_a_score", "N/A"))
+                c2.metric("Option B Score", data.get("option_b_score", "N/A"))
 
-            if "AI 1 for Option A" in sections and "AI 2 for Option B" in sections:
+            if "ai_1_for_option_a" in data and "ai_2_for_option_b" in data:
                 st.markdown("### 🥊 AI Debate Mode")
+
                 d1, d2 = st.columns(2)
 
                 with d1:
                     st.markdown("#### AI 1 - Option A")
-                    st.write(sections["AI 1 for Option A"].strip())
+                    st.write(data.get("ai_1_for_option_a", ""))
 
                 with d2:
                     st.markdown("#### AI 2 - Option B")
-                    st.write(sections["AI 2 for Option B"].strip())
+                    st.write(data.get("ai_2_for_option_b", ""))
 
-            if "Why" in sections:
+            if why_points:
                 st.markdown("### Why")
-                st.write(sections["Why"].strip())
+                for point in why_points:
+                    st.write(f"• {point}")
 
             st.markdown("### First Next Step")
             st.success(next_step)
-                   
+
         except Exception as e:
-             st.error(f"Real error: {e}")
+            if "RESOURCE_EXHAUSTED" in str(e) or "429" in str(e):
+                st.warning("⚠️ AI request limit reached. Please wait a minute and try again.")
+            else:
+                st.error(f"Real error: {e}")
 
     else:
-
         st.warning("Please enter a decision question first.")
 
 # ===============================
-# HISTORY
+# RECENT DECISIONS
 # ===============================
-
 if st.session_state.history:
-
     st.markdown("---")
     st.markdown("## 📜 Recent Decisions")
 
     for item in reversed(st.session_state.history[-5:]):
-
         with st.expander(item["question"]):
             st.write(item["answer"])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
