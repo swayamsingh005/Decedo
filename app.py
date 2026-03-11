@@ -212,28 +212,30 @@ Rules:
                 except:
                     pass
 
-            if "Option A Score" in sections or "Option B Score" in sections:
-                        st.markdown("### Comparison Scores")
-                        c1, c2 = st.columns(2)
-                        c1.metric("Option A Score", sections.get("Option A Score", "N/A").strip())
-                        c2.metric("Option B Score", sections.get("Option B Score", "N/A").strip())
-            if "AI 1 for Option A" in sections:
+                       if "Option A Score" in sections or "Option B Score" in sections:
+                st.markdown("### Comparison Scores")
+                c1, c2 = st.columns(2)
+                c1.metric("Option A Score", sections.get("Option A Score", "N/A").strip())
+                c2.metric("Option B Score", sections.get("Option B Score", "N/A").strip())
+
+            if "AI 1 for Option A" in sections and "AI 2 for Option B" in sections:
                 st.markdown("### 🥊 AI Debate Mode")
-            
                 d1, d2 = st.columns(2)
-        
-            with d1:
-                st.markdown("#### AI 1 – Option A")
-                st.write(sections["AI 1 for Option A"].strip())
-        
-            with d2:
-                st.markdown("#### AI 2 – Option B")
-                st.write(sections["AI 2 for Option B"].strip())
+
+                with d1:
+                    st.markdown("#### AI 1 - Option A")
+                    st.write(sections["AI 1 for Option A"].strip())
+
+                with d2:
+                    st.markdown("#### AI 2 - Option B")
+                    st.write(sections["AI 2 for Option B"].strip())
+
             if "Why" in sections:
-                        st.markdown("### Why")
-                        st.write(sections["Why"].strip())
-st.markdown("### First Next Step")
-st.success(next_step)                                            
+                st.markdown("### Why")
+                st.write(sections["Why"].strip())
+
+            st.markdown("### First Next Step")
+            st.success(next_step)                                            
                    
         except Exception as e:
              st.error(f"Real error: {e}")
@@ -255,6 +257,7 @@ if st.session_state.history:
 
         with st.expander(item["question"]):
             st.write(item["answer"])
+
 
 
 
