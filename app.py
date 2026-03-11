@@ -211,8 +211,8 @@ Rules:
                     st.progress(confidence_number)
                 except:
                     pass
-
-               if "Option A Score" in sections or "Option B Score" in sections:
+                    
+            if "Option A Score" in sections or "Option B Score" in sections:
                 st.markdown("### Comparison Scores")
                 c1, c2 = st.columns(2)
                 c1.metric("Option A Score", sections.get("Option A Score", "N/A").strip())
@@ -257,6 +257,7 @@ if st.session_state.history:
 
         with st.expander(item["question"]):
             st.write(item["answer"])
+
 
 
 
