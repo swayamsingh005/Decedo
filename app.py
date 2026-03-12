@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from google import genai
 from fpdf import FPDF
 
@@ -154,32 +155,6 @@ class PremiumPDF(FPDF):
             self.multi_cell(0, 7, clean_pdf_text(f"- {point}"))
         self.ln(1)
 
-    def metric_box_row(self, metrics):
-        box_w = 44
-        box_h = 22
-        gap = 3
-        start_x = self.get_x()
-        start_y = self.get_y()
-
-        for i, (label, value) in enumerate(metrics):
-            x = start_x + i * (box_w + gap)
-            self.set_xy(x, start_y)
-            self.set_draw_color(225, 229, 235)
-            self.set_fill_color(255, 255, 255)
-            self.rect(x, start_y, box_w, box_h, style="DF")
-
-            self.set_xy(x + 2, start_y + 3)
-            self.set_font("Arial", "B", 9)
-            self.set_text_color(100, 100, 100)
-            self.multi_cell(box_w - 4, 4, clean_pdf_text(label))
-
-            self.set_xy(x + 2, start_y + 11)
-            self.set_font("Arial", "B", 12)
-            self.set_text_color(20, 20, 20)
-            self.multi_cell(box_w - 4, 5, clean_pdf_text(value))
-
-        self.set_xy(start_x, start_y + box_h + 4)
-
     def subsection(self, title):
         self.set_font("Arial", "B", 11)
         self.set_text_color(30, 30, 30)
@@ -190,6 +165,40 @@ class PremiumPDF(FPDF):
         self.set_draw_color(230, 230, 230)
         self.line(10, y, 200, y)
         self.ln(4)
+
+    def metric_row(self, label1, value1, label2, value2):
+        left_x = 10
+        right_x = 105
+        y = self.get_y()
+        row_h = 16
+
+        self.set_draw_color(225, 229, 235)
+        self.set_fill_color(255, 255, 255)
+
+        self.rect(left_x, y, 90, row_h, style="DF")
+        self.rect(right_x, y, 90, row_h, style="DF")
+
+        self.set_xy(left_x + 3, y + 2)
+        self.set_font("Arial", "B", 9)
+        self.set_text_color(100, 100, 100)
+        self.cell(0, 4, clean_pdf_text(label1))
+
+        self.set_xy(left_x + 3, y + 8)
+        self.set_font("Arial", "", 11)
+        self.set_text_color(20, 20, 20)
+        self.multi_cell(84, 5, clean_pdf_text(value1))
+
+        self.set_xy(right_x + 3, y + 2)
+        self.set_font("Arial", "B", 9)
+        self.set_text_color(100, 100, 100)
+        self.cell(0, 4, clean_pdf_text(label2))
+
+        self.set_xy(right_x + 3, y + 8)
+        self.set_font("Arial", "", 11)
+        self.set_text_color(20, 20, 20)
+        self.multi_cell(84, 5, clean_pdf_text(value2))
+
+        self.set_y(y + row_h + 4)
 
 
 def create_pdf_report(
@@ -220,6 +229,8 @@ def create_pdf_report(
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
 
+    india_time = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d %b %Y, %I:%M %p IST")
+
     # Cover / Header
     pdf.set_fill_color(248, 250, 252)
     pdf.rect(10, 10, 190, 28, style="F")
@@ -235,11 +246,11 @@ def create_pdf_report(
     pdf.cell(0, 7, "Decision Intelligence Analysis", ln=True)
 
     pdf.set_x(14)
-    pdf.cell(0, 7, f"Generated on: {datetime.now().strftime('%d %b %Y, %I:%M %p')}", ln=True)
+    pdf.cell(0, 7, f"Generated on: {india_time}", ln=True)
 
     pdf.ln(8)
 
-    # Decision type and question
+    # Decision overview
     pdf.section_title("Decision Overview")
     pdf.subsection("Decision Type")
     pdf.body_text(decision_type)
@@ -253,18 +264,11 @@ def create_pdf_report(
 
     # Metrics
     pdf.section_title("Decision Metrics")
-    pdf.metric_box_row([
-        ("Best Choice", best_option),
-        ("Risk Level", risk_level),
-        ("Score", decision_score),
-        ("Confidence", confidence_level),
-    ])
-    pdf.metric_box_row([
-        ("Decision Grade", decision_grade),
-        ("Type", decision_type),
-        ("Option A Score", option_a_score if option_a_score else "N/A"),
-        ("Option B Score", option_b_score if option_b_score else "N/A"),
-    ])
+    pdf.metric_row("Best Choice", best_option, "Risk Level", risk_level)
+    pdf.metric_row("Score", decision_score, "Confidence", confidence_level)
+    pdf.metric_row("Decision Grade", decision_grade, "Decision Type", decision_type)
+    pdf.metric_row("Option A Score", option_a_score if option_a_score else "N/A",
+                   "Option B Score", option_b_score if option_b_score else "N/A")
 
     # Lenses
     pdf.section_title("Decision Lenses")
@@ -606,9 +610,7 @@ Rules:
                 }
             })
 
-            # ===============================
             # RESULT UI
-            # ===============================
             st.markdown("## 📊 Decision Dashboard")
 
             st.markdown("### Decision Summary")
@@ -741,10 +743,14 @@ Rules:
                 recommended_path_future=recommended_path_future
             )
 
+            safe_filename = question[:40].replace(" ", "_").replace("/", "_").replace("\\", "_")
+            if not safe_filename:
+                safe_filename = "decedo_decision_report"
+
             st.download_button(
                 label="Download Decision Report (PDF)",
                 data=pdf_bytes,
-                file_name="decedo_decision_report.pdf",
+                file_name=f"{safe_filename}.pdf",
                 mime="application/pdf",
                 use_container_width=True
             )
