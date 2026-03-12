@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 from google import genai
+from fpdf import FPDF
 
 # ===============================
 # PAGE CONFIG
@@ -83,6 +84,140 @@ def parse_json_response(raw_text: str) -> dict:
         clean_text = clean_text[:-3].strip()
 
     return json.loads(clean_text)
+
+
+def safe_text(value):
+    if value is None:
+        return "Not available"
+    return str(value)
+
+
+def clean_pdf_text(text):
+    return safe_text(text).replace("–", "-").replace("’", "'").replace("“", '"').replace("”", '"')
+
+
+def create_pdf_report(
+    question,
+    decision_type,
+    summary,
+    best_option,
+    risk_level,
+    decision_score,
+    confidence_level,
+    market_lens,
+    execution_lens,
+    risk_lens,
+    growth_lens,
+    why_points,
+    next_step,
+    strategic_insight,
+    option_a="",
+    option_b="",
+    option_a_score="",
+    option_b_score="",
+    option_a_future=None,
+    option_b_future=None,
+    recommended_path_future=None
+):
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+
+    pdf.set_font("Arial", "B", 18)
+    pdf.cell(0, 10, "Decedo AI Decision Report", ln=True)
+
+    pdf.set_font("Arial", "", 11)
+    pdf.cell(0, 8, clean_pdf_text(f"Decision Type: {decision_type}"), ln=True)
+    pdf.ln(4)
+
+    pdf.set_font("Arial", "B", 13)
+    pdf.cell(0, 8, "Decision Question", ln=True)
+    pdf.set_font("Arial", "", 11)
+    pdf.multi_cell(0, 8, clean_pdf_text(question))
+    pdf.ln(2)
+
+    pdf.set_font("Arial", "B", 13)
+    pdf.cell(0, 8, "Decision Summary", ln=True)
+    pdf.set_font("Arial", "", 11)
+    pdf.multi_cell(0, 8, clean_pdf_text(summary))
+    pdf.ln(2)
+
+    pdf.set_font("Arial", "B", 13)
+    pdf.cell(0, 8, "Decision Metrics", ln=True)
+    pdf.set_font("Arial", "", 11)
+    pdf.multi_cell(0, 8, clean_pdf_text(f"Best Choice: {best_option}"))
+    pdf.multi_cell(0, 8, clean_pdf_text(f"Risk Level: {risk_level}"))
+    pdf.multi_cell(0, 8, clean_pdf_text(f"Score: {decision_score}"))
+    pdf.multi_cell(0, 8, clean_pdf_text(f"Confidence: {confidence_level}"))
+    pdf.ln(2)
+
+    pdf.set_font("Arial", "B", 13)
+    pdf.cell(0, 8, "Decision Lenses", ln=True)
+    pdf.set_font("Arial", "", 11)
+    pdf.multi_cell(0, 8, clean_pdf_text(f"Market Lens: {market_lens}"))
+    pdf.multi_cell(0, 8, clean_pdf_text(f"Execution Lens: {execution_lens}"))
+    pdf.multi_cell(0, 8, clean_pdf_text(f"Risk Lens: {risk_lens}"))
+    pdf.multi_cell(0, 8, clean_pdf_text(f"Growth Lens: {growth_lens}"))
+    pdf.ln(2)
+
+    if option_a_score or option_b_score:
+        pdf.set_font("Arial", "B", 13)
+        pdf.cell(0, 8, "Comparison Scores", ln=True)
+        pdf.set_font("Arial", "", 11)
+        if option_a:
+            pdf.multi_cell(0, 8, clean_pdf_text(f"{option_a} Score: {option_a_score}"))
+        if option_b:
+            pdf.multi_cell(0, 8, clean_pdf_text(f"{option_b} Score: {option_b_score}"))
+        pdf.ln(2)
+
+    if why_points:
+        pdf.set_font("Arial", "B", 13)
+        pdf.cell(0, 8, "Why", ln=True)
+        pdf.set_font("Arial", "", 11)
+        for point in why_points:
+            pdf.multi_cell(0, 8, clean_pdf_text(f"- {point}"))
+        pdf.ln(2)
+
+    pdf.set_font("Arial", "B", 13)
+    pdf.cell(0, 8, "First Next Step", ln=True)
+    pdf.set_font("Arial", "", 11)
+    pdf.multi_cell(0, 8, clean_pdf_text(next_step))
+    pdf.ln(2)
+
+    pdf.set_font("Arial", "B", 13)
+    pdf.cell(0, 8, "Scenario Simulation", ln=True)
+    pdf.set_font("Arial", "", 11)
+
+    if option_a_future and option_b_future:
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, clean_pdf_text(f"Option A Future: {option_a}"), ln=True)
+        pdf.set_font("Arial", "", 11)
+        pdf.multi_cell(0, 8, clean_pdf_text(f"3 Months: {option_a_future.get('3_months', 'Not available')}"))
+        pdf.multi_cell(0, 8, clean_pdf_text(f"1 Year: {option_a_future.get('1_year', 'Not available')}"))
+        pdf.multi_cell(0, 8, clean_pdf_text(f"5 Years: {option_a_future.get('5_years', 'Not available')}"))
+        pdf.ln(1)
+
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, clean_pdf_text(f"Option B Future: {option_b}"), ln=True)
+        pdf.set_font("Arial", "", 11)
+        pdf.multi_cell(0, 8, clean_pdf_text(f"3 Months: {option_b_future.get('3_months', 'Not available')}"))
+        pdf.multi_cell(0, 8, clean_pdf_text(f"1 Year: {option_b_future.get('1_year', 'Not available')}"))
+        pdf.multi_cell(0, 8, clean_pdf_text(f"5 Years: {option_b_future.get('5_years', 'Not available')}"))
+        pdf.ln(2)
+
+    elif recommended_path_future:
+        pdf.multi_cell(0, 8, clean_pdf_text(f"3 Months: {recommended_path_future.get('3_months', 'Not available')}"))
+        pdf.multi_cell(0, 8, clean_pdf_text(f"1 Year: {recommended_path_future.get('1_year', 'Not available')}"))
+        pdf.multi_cell(0, 8, clean_pdf_text(f"5 Years: {recommended_path_future.get('5_years', 'Not available')}"))
+        pdf.ln(2)
+
+    pdf.set_font("Arial", "B", 13)
+    pdf.cell(0, 8, "Strategic Insight", ln=True)
+    pdf.set_font("Arial", "", 11)
+    pdf.multi_cell(0, 8, clean_pdf_text(strategic_insight))
+
+    return pdf.output(dest="S").encode("latin-1")
+
 
 # ===============================
 # SIDEBAR INPUT PANEL
@@ -238,7 +373,7 @@ Rules:
             why_points = analysis_data.get("why", [])
 
             # ===============================
-            # V4 SCENARIO SIMULATION PROMPT
+            # SCENARIO SIMULATION PROMPT
             # ===============================
             if option_a.strip() and option_b.strip():
                 scenario_prompt = f"""
@@ -364,7 +499,6 @@ Rules:
             recommended_path_future = scenario_data.get("recommended_path_future", {})
             strategic_insight = scenario_data.get("strategic_insight", "Not available")
 
-            # save history
             st.session_state.history.append({
                 "question": question,
                 "answer": {
@@ -425,11 +559,11 @@ Rules:
                 d1, d2 = st.columns(2)
 
                 with d1:
-                    st.markdown("#### AI 1 — Option A")
+                    st.markdown("#### AI 1 - Option A")
                     st.write(analysis_data.get("ai_1_for_option_a", ""))
 
                 with d2:
-                    st.markdown("#### AI 2 — Option B")
+                    st.markdown("#### AI 2 - Option B")
                     st.write(analysis_data.get("ai_2_for_option_b", ""))
 
             if why_points:
@@ -441,7 +575,7 @@ Rules:
             st.success(next_step)
 
             # ===============================
-            # V4 SCENARIO SIMULATION UI
+            # SCENARIO SIMULATION UI
             # ===============================
             st.divider()
             st.markdown("## 🔮 Scenario Simulation")
@@ -450,7 +584,7 @@ Rules:
                 s1, s2 = st.columns(2)
 
                 with s1:
-                    st.markdown(f"### Option A Future")
+                    st.markdown("### Option A Future")
                     st.markdown(f"**{option_a if option_a else 'Option A'}**")
                     st.markdown("**3 Months**")
                     st.write(option_a_future.get("3_months", "Not available"))
@@ -460,7 +594,7 @@ Rules:
                     st.write(option_a_future.get("5_years", "Not available"))
 
                 with s2:
-                    st.markdown(f"### Option B Future")
+                    st.markdown("### Option B Future")
                     st.markdown(f"**{option_b if option_b else 'Option B'}**")
                     st.markdown("**3 Months**")
                     st.write(option_b_future.get("3_months", "Not available"))
@@ -484,6 +618,44 @@ Rules:
             st.divider()
             st.markdown("## 🎯 Strategic Insight")
             st.success(strategic_insight)
+
+            # ===============================
+            # PDF DOWNLOAD
+            # ===============================
+            st.divider()
+            st.markdown("## 📄 Download Report")
+
+            pdf_bytes = create_pdf_report(
+                question=question,
+                decision_type=decision_type,
+                summary=summary,
+                best_option=best_option,
+                risk_level=risk_level,
+                decision_score=str(decision_score),
+                confidence_level=str(confidence_level),
+                market_lens=market_lens,
+                execution_lens=execution_lens,
+                risk_lens=risk_lens,
+                growth_lens=growth_lens,
+                why_points=why_points,
+                next_step=next_step,
+                strategic_insight=strategic_insight,
+                option_a=option_a,
+                option_b=option_b,
+                option_a_score=analysis_data.get("option_a_score", ""),
+                option_b_score=analysis_data.get("option_b_score", ""),
+                option_a_future=option_a_future,
+                option_b_future=option_b_future,
+                recommended_path_future=recommended_path_future
+            )
+
+            st.download_button(
+                label="Download Decision Report (PDF)",
+                data=pdf_bytes,
+                file_name="decedo_decision_report.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
 
         except Exception as e:
             if "RESOURCE_EXHAUSTED" in str(e) or "429" in str(e):
