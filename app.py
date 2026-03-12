@@ -10,6 +10,7 @@ st.set_page_config(
     page_icon="🧠",
     layout="wide"
 )
+
 st.markdown("""
 <style>
     .main {
@@ -38,10 +39,6 @@ st.markdown("""
         color: #111827;
     }
 
-    p, label, div {
-        color: #374151;
-    }
-
     .stButton>button {
         border-radius: 12px;
         font-weight: 600;
@@ -59,6 +56,7 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
 # ===============================
 # API SETUP
 # ===============================
@@ -70,6 +68,21 @@ client = genai.Client(api_key=API_KEY)
 # ===============================
 if "history" not in st.session_state:
     st.session_state.history = []
+
+# ===============================
+# HELPERS
+# ===============================
+def parse_json_response(raw_text: str) -> dict:
+    clean_text = raw_text.strip()
+
+    if clean_text.startswith("```json"):
+        clean_text = clean_text.replace("```json", "", 1).strip()
+    if clean_text.startswith("```"):
+        clean_text = clean_text.replace("```", "", 1).strip()
+    if clean_text.endswith("```"):
+        clean_text = clean_text[:-3].strip()
+
+    return json.loads(clean_text)
 
 # ===============================
 # SIDEBAR INPUT PANEL
@@ -102,7 +115,7 @@ with st.sidebar:
     analyze = st.button("Analyze Decision", type="primary", use_container_width=True)
 
     st.divider()
-    st.caption("Structured reasoning • Decision lenses • AI debate")
+    st.caption("Structured reasoning • Decision lenses • AI debate • Scenario simulation")
 
 # ===============================
 # MAIN HEADER
@@ -120,7 +133,7 @@ if analyze:
     if question.strip():
 
         if option_a.strip() and option_b.strip():
-            prompt = f"""
+            analysis_prompt = f"""
 You are Decedo, an AI decision intelligence assistant.
 
 Analyze this decision as a structured comparison.
@@ -165,7 +178,7 @@ Rules:
 - Use realistic reasoning
 """
         else:
-            prompt = f"""
+            analysis_prompt = f"""
 You are Decedo, an AI decision intelligence assistant.
 
 Analyze the user's decision question clearly and briefly.
@@ -203,55 +216,171 @@ Rules:
 
         try:
             with st.spinner("Analyzing your decision..."):
-                response = client.models.generate_content(
+                analysis_response = client.models.generate_content(
                     model="gemini-2.5-flash",
-                    contents=prompt,
+                    contents=analysis_prompt,
                 )
 
-            result = response.text
+            analysis_result = analysis_response.text
+            analysis_data = parse_json_response(analysis_result)
 
+            summary = analysis_data.get("decision_summary", analysis_data.get("comparison_summary", "Not available"))
+            best_option = analysis_data.get("best_option", analysis_data.get("better_option", "Not available"))
+            risk_level = analysis_data.get("risk_level", analysis_data.get("risk_comparison", "Not available"))
+            decision_score = analysis_data.get("decision_score", analysis_data.get("option_a_score", "Not available"))
+            next_step = analysis_data.get("first_next_step", "Not available")
+            confidence_level = analysis_data.get("confidence_level", "Not available")
+
+            market_lens = analysis_data.get("market_lens", "")
+            execution_lens = analysis_data.get("execution_lens", "")
+            risk_lens = analysis_data.get("risk_lens", "")
+            growth_lens = analysis_data.get("growth_lens", "")
+            why_points = analysis_data.get("why", [])
+
+            # ===============================
+            # V4 SCENARIO SIMULATION PROMPT
+            # ===============================
+            if option_a.strip() and option_b.strip():
+                scenario_prompt = f"""
+You are Decedo, an AI strategic simulation engine.
+
+Simulate the future consequences of both options.
+
+Decision Type:
+{decision_type}
+
+User question:
+{question}
+
+Option A:
+{option_a}
+
+Option B:
+{option_b}
+
+Existing decision summary:
+{summary}
+
+Best option:
+{best_option}
+
+Market lens:
+{market_lens}
+
+Execution lens:
+{execution_lens}
+
+Risk lens:
+{risk_lens}
+
+Growth lens:
+{growth_lens}
+
+Respond only in valid JSON.
+Do not write markdown.
+Do not add explanation outside JSON.
+
+Use this exact JSON structure:
+{{
+  "option_a_future": {{
+    "3_months": "1 short sentence",
+    "1_year": "1 short sentence",
+    "5_years": "1 short sentence"
+  }},
+  "option_b_future": {{
+    "3_months": "1 short sentence",
+    "1_year": "1 short sentence",
+    "5_years": "1 short sentence"
+  }},
+  "strategic_insight": "1 powerful strategic insight in 1-2 short sentences"
+}}
+
+Rules:
+- Be realistic
+- Be specific
+- Keep each point concise
+"""
+            else:
+                scenario_prompt = f"""
+You are Decedo, an AI strategic simulation engine.
+
+Simulate the future consequences of the user's likely path.
+
+Decision Type:
+{decision_type}
+
+User question:
+{question}
+
+Existing decision summary:
+{summary}
+
+Best option:
+{best_option}
+
+Market lens:
+{market_lens}
+
+Execution lens:
+{execution_lens}
+
+Risk lens:
+{risk_lens}
+
+Growth lens:
+{growth_lens}
+
+Respond only in valid JSON.
+Do not write markdown.
+Do not add explanation outside JSON.
+
+Use this exact JSON structure:
+{{
+  "recommended_path_future": {{
+    "3_months": "1 short sentence",
+    "1_year": "1 short sentence",
+    "5_years": "1 short sentence"
+  }},
+  "strategic_insight": "1 powerful strategic insight in 1-2 short sentences"
+}}
+
+Rules:
+- Be realistic
+- Be specific
+- Keep each point concise
+"""
+
+            with st.spinner("Simulating future outcomes..."):
+                scenario_response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=scenario_prompt,
+                )
+
+            scenario_result = scenario_response.text
+            scenario_data = parse_json_response(scenario_result)
+
+            option_a_future = scenario_data.get("option_a_future", {})
+            option_b_future = scenario_data.get("option_b_future", {})
+            recommended_path_future = scenario_data.get("recommended_path_future", {})
+            strategic_insight = scenario_data.get("strategic_insight", "Not available")
+
+            # save history
             st.session_state.history.append({
                 "question": question,
-                "answer": result
+                "answer": {
+                    "analysis": analysis_data,
+                    "scenario": scenario_data
+                }
             })
-
-            # ===============================
-            # JSON PARSING
-            # ===============================
-            clean_result = result.strip()
-
-            if clean_result.startswith("```json"):
-                clean_result = clean_result.replace("```json", "", 1).strip()
-
-            if clean_result.endswith("```"):
-                clean_result = clean_result[:-3].strip()
-
-            data = json.loads(clean_result)
-
-            summary = data.get("decision_summary", data.get("comparison_summary", "Not available"))
-            best_option = data.get("best_option", data.get("better_option", "Not available"))
-            risk_level = data.get("risk_level", data.get("risk_comparison", "Not available"))
-            decision_score = data.get("decision_score", data.get("option_a_score", "Not available"))
-            next_step = data.get("first_next_step", "Not available")
-            confidence_level = data.get("confidence_level", "Not available")
-
-            market_lens = data.get("market_lens", "")
-            execution_lens = data.get("execution_lens", "")
-            risk_lens = data.get("risk_lens", "")
-            growth_lens = data.get("growth_lens", "")
-
-            why_points = data.get("why", [])
 
             # ===============================
             # RESULT UI
             # ===============================
             st.markdown("## 📊 Decision Dashboard")
 
-            # Summary
             st.markdown("### Decision Summary")
             st.info(summary)
 
-            # Decision Lenses
             st.markdown("### Decision Lenses")
             lens_col1, lens_col2 = st.columns(2)
 
@@ -269,7 +398,6 @@ Rules:
                 st.markdown("#### Growth Lens")
                 st.write(growth_lens if growth_lens else "Not available")
 
-            # Metrics
             st.markdown("### Decision Metrics")
             col1, col2, col3, col4 = st.columns(4)
 
@@ -286,35 +414,76 @@ Rules:
                 except:
                     pass
 
-            # Comparison Scores
-            if "option_a_score" in data or "option_b_score" in data:
+            if "option_a_score" in analysis_data or "option_b_score" in analysis_data:
                 st.markdown("### Comparison Scores")
                 c1, c2 = st.columns(2)
-                c1.metric("Option A Score", data.get("option_a_score", "N/A"))
-                c2.metric("Option B Score", data.get("option_b_score", "N/A"))
+                c1.metric("Option A Score", analysis_data.get("option_a_score", "N/A"))
+                c2.metric("Option B Score", analysis_data.get("option_b_score", "N/A"))
 
-            # AI Debate
-            if "ai_1_for_option_a" in data and "ai_2_for_option_b" in data:
+            if "ai_1_for_option_a" in analysis_data and "ai_2_for_option_b" in analysis_data:
                 st.markdown("### 🥊 AI Debate Mode")
                 d1, d2 = st.columns(2)
 
                 with d1:
                     st.markdown("#### AI 1 — Option A")
-                    st.write(data.get("ai_1_for_option_a", ""))
+                    st.write(analysis_data.get("ai_1_for_option_a", ""))
 
                 with d2:
                     st.markdown("#### AI 2 — Option B")
-                    st.write(data.get("ai_2_for_option_b", ""))
+                    st.write(analysis_data.get("ai_2_for_option_b", ""))
 
-            # Why
             if why_points:
                 st.markdown("### Why")
                 for point in why_points:
                     st.write(f"• {point}")
 
-            # Next Step
             st.markdown("### First Next Step")
             st.success(next_step)
+
+            # ===============================
+            # V4 SCENARIO SIMULATION UI
+            # ===============================
+            st.divider()
+            st.markdown("## 🔮 Scenario Simulation")
+
+            if option_a_future and option_b_future:
+                s1, s2 = st.columns(2)
+
+                with s1:
+                    st.markdown(f"### Option A Future")
+                    st.markdown(f"**{option_a if option_a else 'Option A'}**")
+                    st.markdown("**3 Months**")
+                    st.write(option_a_future.get("3_months", "Not available"))
+                    st.markdown("**1 Year**")
+                    st.write(option_a_future.get("1_year", "Not available"))
+                    st.markdown("**5 Years**")
+                    st.write(option_a_future.get("5_years", "Not available"))
+
+                with s2:
+                    st.markdown(f"### Option B Future")
+                    st.markdown(f"**{option_b if option_b else 'Option B'}**")
+                    st.markdown("**3 Months**")
+                    st.write(option_b_future.get("3_months", "Not available"))
+                    st.markdown("**1 Year**")
+                    st.write(option_b_future.get("1_year", "Not available"))
+                    st.markdown("**5 Years**")
+                    st.write(option_b_future.get("5_years", "Not available"))
+
+            elif recommended_path_future:
+                st.markdown("### Recommended Path Future")
+                st.markdown("**3 Months**")
+                st.write(recommended_path_future.get("3_months", "Not available"))
+                st.markdown("**1 Year**")
+                st.write(recommended_path_future.get("1_year", "Not available"))
+                st.markdown("**5 Years**")
+                st.write(recommended_path_future.get("5_years", "Not available"))
+
+            # ===============================
+            # STRATEGIC INSIGHT
+            # ===============================
+            st.divider()
+            st.markdown("## 🎯 Strategic Insight")
+            st.success(strategic_insight)
 
         except Exception as e:
             if "RESOURCE_EXHAUSTED" in str(e) or "429" in str(e):
@@ -335,4 +504,3 @@ if st.session_state.history:
     for item in reversed(st.session_state.history[-5:]):
         with st.expander(item["question"]):
             st.write(item["answer"])
-
