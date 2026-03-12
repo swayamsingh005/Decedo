@@ -1,5 +1,6 @@
 import streamlit as st
 import json
+from datetime import datetime
 from google import genai
 from fpdf import FPDF
 
@@ -93,7 +94,102 @@ def safe_text(value):
 
 
 def clean_pdf_text(text):
-    return safe_text(text).replace("–", "-").replace("’", "'").replace("“", '"').replace("”", '"')
+    return (
+        safe_text(text)
+        .replace("–", "-")
+        .replace("—", "-")
+        .replace("’", "'")
+        .replace("“", '"')
+        .replace("”", '"')
+        .replace("•", "-")
+    )
+
+
+def calculate_grade(score):
+    try:
+        score = float(str(score).replace("/10", "").strip())
+    except:
+        return "N/A"
+
+    if score >= 9:
+        return "A+"
+    elif score >= 8:
+        return "A"
+    elif score >= 7:
+        return "B"
+    elif score >= 6:
+        return "C"
+    else:
+        return "D"
+
+
+class PremiumPDF(FPDF):
+    def header(self):
+        pass
+
+    def footer(self):
+        self.set_y(-12)
+        self.set_font("Arial", "I", 9)
+        self.set_text_color(120, 120, 120)
+        self.cell(0, 8, f"Page {self.page_no()}", align="C")
+
+    def section_title(self, title):
+        self.ln(2)
+        self.set_fill_color(240, 244, 248)
+        self.set_text_color(25, 35, 50)
+        self.set_font("Arial", "B", 13)
+        self.cell(0, 10, clean_pdf_text(title), ln=True, fill=True)
+        self.ln(2)
+
+    def body_text(self, text, font_size=11):
+        self.set_font("Arial", "", font_size)
+        self.set_text_color(50, 50, 50)
+        self.multi_cell(0, 7, clean_pdf_text(text))
+        self.ln(1)
+
+    def bullet_points(self, points):
+        self.set_font("Arial", "", 11)
+        self.set_text_color(50, 50, 50)
+        for point in points:
+            self.multi_cell(0, 7, clean_pdf_text(f"- {point}"))
+        self.ln(1)
+
+    def metric_box_row(self, metrics):
+        box_w = 44
+        box_h = 22
+        gap = 3
+        start_x = self.get_x()
+        start_y = self.get_y()
+
+        for i, (label, value) in enumerate(metrics):
+            x = start_x + i * (box_w + gap)
+            self.set_xy(x, start_y)
+            self.set_draw_color(225, 229, 235)
+            self.set_fill_color(255, 255, 255)
+            self.rect(x, start_y, box_w, box_h, style="DF")
+
+            self.set_xy(x + 2, start_y + 3)
+            self.set_font("Arial", "B", 9)
+            self.set_text_color(100, 100, 100)
+            self.multi_cell(box_w - 4, 4, clean_pdf_text(label))
+
+            self.set_xy(x + 2, start_y + 11)
+            self.set_font("Arial", "B", 12)
+            self.set_text_color(20, 20, 20)
+            self.multi_cell(box_w - 4, 5, clean_pdf_text(value))
+
+        self.set_xy(start_x, start_y + box_h + 4)
+
+    def subsection(self, title):
+        self.set_font("Arial", "B", 11)
+        self.set_text_color(30, 30, 30)
+        self.cell(0, 8, clean_pdf_text(title), ln=True)
+
+    def divider(self):
+        y = self.get_y()
+        self.set_draw_color(230, 230, 230)
+        self.line(10, y, 200, y)
+        self.ln(4)
 
 
 def create_pdf_report(
@@ -104,6 +200,7 @@ def create_pdf_report(
     risk_level,
     decision_score,
     confidence_level,
+    decision_grade,
     market_lens,
     execution_lens,
     risk_lens,
@@ -119,102 +216,105 @@ def create_pdf_report(
     option_b_future=None,
     recommended_path_future=None
 ):
-    pdf = FPDF()
+    pdf = PremiumPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
 
-    pdf.set_font("Arial", "B", 18)
-    pdf.cell(0, 10, "Decedo AI Decision Report", ln=True)
+    # Cover / Header
+    pdf.set_fill_color(248, 250, 252)
+    pdf.rect(10, 10, 190, 28, style="F")
 
+    pdf.set_xy(14, 14)
+    pdf.set_font("Arial", "B", 20)
+    pdf.set_text_color(20, 30, 50)
+    pdf.cell(0, 8, "Decedo AI Decision Report", ln=True)
+
+    pdf.set_x(14)
     pdf.set_font("Arial", "", 11)
-    pdf.cell(0, 8, clean_pdf_text(f"Decision Type: {decision_type}"), ln=True)
-    pdf.ln(4)
+    pdf.set_text_color(90, 100, 120)
+    pdf.cell(0, 7, "Decision Intelligence Analysis", ln=True)
 
-    pdf.set_font("Arial", "B", 13)
-    pdf.cell(0, 8, "Decision Question", ln=True)
-    pdf.set_font("Arial", "", 11)
-    pdf.multi_cell(0, 8, clean_pdf_text(question))
-    pdf.ln(2)
+    pdf.set_x(14)
+    pdf.cell(0, 7, f"Generated on: {datetime.now().strftime('%d %b %Y, %I:%M %p')}", ln=True)
 
-    pdf.set_font("Arial", "B", 13)
-    pdf.cell(0, 8, "Decision Summary", ln=True)
-    pdf.set_font("Arial", "", 11)
-    pdf.multi_cell(0, 8, clean_pdf_text(summary))
-    pdf.ln(2)
+    pdf.ln(8)
 
-    pdf.set_font("Arial", "B", 13)
-    pdf.cell(0, 8, "Decision Metrics", ln=True)
-    pdf.set_font("Arial", "", 11)
-    pdf.multi_cell(0, 8, clean_pdf_text(f"Best Choice: {best_option}"))
-    pdf.multi_cell(0, 8, clean_pdf_text(f"Risk Level: {risk_level}"))
-    pdf.multi_cell(0, 8, clean_pdf_text(f"Score: {decision_score}"))
-    pdf.multi_cell(0, 8, clean_pdf_text(f"Confidence: {confidence_level}"))
-    pdf.ln(2)
+    # Decision type and question
+    pdf.section_title("Decision Overview")
+    pdf.subsection("Decision Type")
+    pdf.body_text(decision_type)
 
-    pdf.set_font("Arial", "B", 13)
-    pdf.cell(0, 8, "Decision Lenses", ln=True)
-    pdf.set_font("Arial", "", 11)
-    pdf.multi_cell(0, 8, clean_pdf_text(f"Market Lens: {market_lens}"))
-    pdf.multi_cell(0, 8, clean_pdf_text(f"Execution Lens: {execution_lens}"))
-    pdf.multi_cell(0, 8, clean_pdf_text(f"Risk Lens: {risk_lens}"))
-    pdf.multi_cell(0, 8, clean_pdf_text(f"Growth Lens: {growth_lens}"))
-    pdf.ln(2)
+    pdf.subsection("Decision Question")
+    pdf.body_text(question)
 
-    if option_a_score or option_b_score:
-        pdf.set_font("Arial", "B", 13)
-        pdf.cell(0, 8, "Comparison Scores", ln=True)
-        pdf.set_font("Arial", "", 11)
-        if option_a:
-            pdf.multi_cell(0, 8, clean_pdf_text(f"{option_a} Score: {option_a_score}"))
-        if option_b:
-            pdf.multi_cell(0, 8, clean_pdf_text(f"{option_b} Score: {option_b_score}"))
-        pdf.ln(2)
+    # Summary
+    pdf.section_title("Decision Summary")
+    pdf.body_text(summary)
 
+    # Metrics
+    pdf.section_title("Decision Metrics")
+    pdf.metric_box_row([
+        ("Best Choice", best_option),
+        ("Risk Level", risk_level),
+        ("Score", decision_score),
+        ("Confidence", confidence_level),
+    ])
+    pdf.metric_box_row([
+        ("Decision Grade", decision_grade),
+        ("Type", decision_type),
+        ("Option A Score", option_a_score if option_a_score else "N/A"),
+        ("Option B Score", option_b_score if option_b_score else "N/A"),
+    ])
+
+    # Lenses
+    pdf.section_title("Decision Lenses")
+
+    pdf.subsection("Market Lens")
+    pdf.body_text(market_lens)
+
+    pdf.subsection("Execution Lens")
+    pdf.body_text(execution_lens)
+
+    pdf.subsection("Risk Lens")
+    pdf.body_text(risk_lens)
+
+    pdf.subsection("Growth Lens")
+    pdf.body_text(growth_lens)
+
+    # Why
     if why_points:
-        pdf.set_font("Arial", "B", 13)
-        pdf.cell(0, 8, "Why", ln=True)
-        pdf.set_font("Arial", "", 11)
-        for point in why_points:
-            pdf.multi_cell(0, 8, clean_pdf_text(f"- {point}"))
-        pdf.ln(2)
+        pdf.section_title("Why")
+        pdf.bullet_points(why_points)
 
-    pdf.set_font("Arial", "B", 13)
-    pdf.cell(0, 8, "First Next Step", ln=True)
-    pdf.set_font("Arial", "", 11)
-    pdf.multi_cell(0, 8, clean_pdf_text(next_step))
-    pdf.ln(2)
+    # Next step
+    pdf.section_title("First Next Step")
+    pdf.body_text(next_step)
 
-    pdf.set_font("Arial", "B", 13)
-    pdf.cell(0, 8, "Scenario Simulation", ln=True)
-    pdf.set_font("Arial", "", 11)
+    # Scenario simulation
+    pdf.section_title("Scenario Simulation")
 
     if option_a_future and option_b_future:
-        pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 8, clean_pdf_text(f"Option A Future: {option_a}"), ln=True)
-        pdf.set_font("Arial", "", 11)
-        pdf.multi_cell(0, 8, clean_pdf_text(f"3 Months: {option_a_future.get('3_months', 'Not available')}"))
-        pdf.multi_cell(0, 8, clean_pdf_text(f"1 Year: {option_a_future.get('1_year', 'Not available')}"))
-        pdf.multi_cell(0, 8, clean_pdf_text(f"5 Years: {option_a_future.get('5_years', 'Not available')}"))
-        pdf.ln(1)
+        pdf.subsection(f"Option A Future: {option_a if option_a else 'Option A'}")
+        pdf.body_text(f"3 Months: {option_a_future.get('3_months', 'Not available')}")
+        pdf.body_text(f"1 Year: {option_a_future.get('1_year', 'Not available')}")
+        pdf.body_text(f"5 Years: {option_a_future.get('5_years', 'Not available')}")
 
-        pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 8, clean_pdf_text(f"Option B Future: {option_b}"), ln=True)
-        pdf.set_font("Arial", "", 11)
-        pdf.multi_cell(0, 8, clean_pdf_text(f"3 Months: {option_b_future.get('3_months', 'Not available')}"))
-        pdf.multi_cell(0, 8, clean_pdf_text(f"1 Year: {option_b_future.get('1_year', 'Not available')}"))
-        pdf.multi_cell(0, 8, clean_pdf_text(f"5 Years: {option_b_future.get('5_years', 'Not available')}"))
-        pdf.ln(2)
+        pdf.divider()
+
+        pdf.subsection(f"Option B Future: {option_b if option_b else 'Option B'}")
+        pdf.body_text(f"3 Months: {option_b_future.get('3_months', 'Not available')}")
+        pdf.body_text(f"1 Year: {option_b_future.get('1_year', 'Not available')}")
+        pdf.body_text(f"5 Years: {option_b_future.get('5_years', 'Not available')}")
 
     elif recommended_path_future:
-        pdf.multi_cell(0, 8, clean_pdf_text(f"3 Months: {recommended_path_future.get('3_months', 'Not available')}"))
-        pdf.multi_cell(0, 8, clean_pdf_text(f"1 Year: {recommended_path_future.get('1_year', 'Not available')}"))
-        pdf.multi_cell(0, 8, clean_pdf_text(f"5 Years: {recommended_path_future.get('5_years', 'Not available')}"))
-        pdf.ln(2)
+        pdf.subsection("Recommended Path Future")
+        pdf.body_text(f"3 Months: {recommended_path_future.get('3_months', 'Not available')}")
+        pdf.body_text(f"1 Year: {recommended_path_future.get('1_year', 'Not available')}")
+        pdf.body_text(f"5 Years: {recommended_path_future.get('5_years', 'Not available')}")
 
-    pdf.set_font("Arial", "B", 13)
-    pdf.cell(0, 8, "Strategic Insight", ln=True)
-    pdf.set_font("Arial", "", 11)
-    pdf.multi_cell(0, 8, clean_pdf_text(strategic_insight))
+    # Strategic insight
+    pdf.section_title("Strategic Insight")
+    pdf.body_text(strategic_insight)
 
     return pdf.output(dest="S").encode("latin-1")
 
@@ -363,8 +463,9 @@ Rules:
             best_option = analysis_data.get("best_option", analysis_data.get("better_option", "Not available"))
             risk_level = analysis_data.get("risk_level", analysis_data.get("risk_comparison", "Not available"))
             decision_score = analysis_data.get("decision_score", analysis_data.get("option_a_score", "Not available"))
-            next_step = analysis_data.get("first_next_step", "Not available")
             confidence_level = analysis_data.get("confidence_level", "Not available")
+            next_step = analysis_data.get("first_next_step", "Not available")
+            decision_grade = calculate_grade(decision_score)
 
             market_lens = analysis_data.get("market_lens", "")
             execution_lens = analysis_data.get("execution_lens", "")
@@ -372,9 +473,7 @@ Rules:
             growth_lens = analysis_data.get("growth_lens", "")
             why_points = analysis_data.get("why", [])
 
-            # ===============================
-            # SCENARIO SIMULATION PROMPT
-            # ===============================
+            # Scenario simulation
             if option_a.strip() and option_b.strip():
                 scenario_prompt = f"""
 You are Decedo, an AI strategic simulation engine.
@@ -533,12 +632,13 @@ Rules:
                 st.write(growth_lens if growth_lens else "Not available")
 
             st.markdown("### Decision Metrics")
-            col1, col2, col3, col4 = st.columns(4)
+            col1, col2, col3, col4, col5 = st.columns(5)
 
             col1.metric("Best Choice", best_option)
             col2.metric("Risk Level", risk_level)
             col3.metric("Score", decision_score)
             col4.metric("Confidence", confidence_level)
+            col5.metric("Decision Grade", decision_grade)
 
             if confidence_level and confidence_level != "Not available":
                 try:
@@ -574,9 +674,6 @@ Rules:
             st.markdown("### First Next Step")
             st.success(next_step)
 
-            # ===============================
-            # SCENARIO SIMULATION UI
-            # ===============================
             st.divider()
             st.markdown("## 🔮 Scenario Simulation")
 
@@ -612,16 +709,10 @@ Rules:
                 st.markdown("**5 Years**")
                 st.write(recommended_path_future.get("5_years", "Not available"))
 
-            # ===============================
-            # STRATEGIC INSIGHT
-            # ===============================
             st.divider()
             st.markdown("## 🎯 Strategic Insight")
             st.success(strategic_insight)
 
-            # ===============================
-            # PDF DOWNLOAD
-            # ===============================
             st.divider()
             st.markdown("## 📄 Download Report")
 
@@ -633,6 +724,7 @@ Rules:
                 risk_level=risk_level,
                 decision_score=str(decision_score),
                 confidence_level=str(confidence_level),
+                decision_grade=decision_grade,
                 market_lens=market_lens,
                 execution_lens=execution_lens,
                 risk_lens=risk_lens,
