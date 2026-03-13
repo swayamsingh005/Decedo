@@ -6,9 +6,9 @@ from google import genai
 from fpdf import FPDF
 from supabase import create_client, Client
 
-# =========================================
+# =========================================================
 # PAGE CONFIG
-# =========================================
+# =========================================================
 st.set_page_config(
     page_title="Decedo",
     page_icon="🧠",
@@ -16,9 +16,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# =========================================
+# =========================================================
 # STYLES
-# =========================================
+# =========================================================
 st.markdown("""
 <style>
     .main {
@@ -52,7 +52,15 @@ st.markdown("""
         padding: 28px;
         box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
         text-align: center;
-        min-height: 220px;
+        min-height: 210px;
+    }
+    .soft-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        margin-bottom: 16px;
     }
     .stButton>button {
         border-radius: 14px;
@@ -74,9 +82,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# =========================================
+# =========================================================
 # SECRETS / CLIENTS
-# =========================================
+# =========================================================
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_ANON_KEY = st.secrets["SUPABASE_ANON_KEY"]
 SUPABASE_SERVICE_ROLE_KEY = st.secrets["SUPABASE_SERVICE_ROLE_KEY"]
@@ -86,14 +94,14 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 admin_supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 gemini_client = genai.Client(api_key=GEMINI_API_KEY)
 
-# =========================================
-# SESSION STATE DEFAULTS
-# =========================================
+# =========================================================
+# SESSION DEFAULTS
+# =========================================================
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
 if "current_page" not in st.session_state:
-    st.session_state.current_page = "home"
+    st.session_state.current_page = "auth"
 
 if "user_email" not in st.session_state:
     st.session_state.user_email = None
@@ -104,9 +112,9 @@ if "user_id" not in st.session_state:
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# =========================================
+# =========================================================
 # AUTH FUNCTIONS
-# =========================================
+# =========================================================
 def login_user(email: str, password: str):
     try:
         result = supabase.auth.sign_in_with_password({
@@ -133,9 +141,9 @@ def logout_user():
     except Exception:
         pass
 
-# =========================================
-# PROFILE / PLAN / USAGE FUNCTIONS
-# =========================================
+# =========================================================
+# DB HELPERS
+# =========================================================
 def get_profile():
     try:
         result = admin_supabase.table("profiles").select("*").eq("user_id", st.session_state.user_id).limit(1).execute()
@@ -197,7 +205,6 @@ def get_usage():
             return result.data[0]
     except Exception:
         pass
-
     return {
         "reports_today": 0,
         "last_reset": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
@@ -238,10 +245,8 @@ def user_can_generate():
 
     if status != "active":
         return False, plan, used, limit
-
     if limit is None:
         return True, plan, used, limit
-
     return used < limit, plan, used, limit
 
 def increment_usage():
@@ -264,9 +269,27 @@ def increment_usage():
     except Exception:
         pass
 
-# =========================================
-# AI / REPORT FUNCTIONS
-# =========================================
+def save_report(question, decision_type, option_a, option_b, analysis_data, scenario_data):
+    try:
+        admin_supabase.table("reports").insert({
+            "user_id": st.session_state.user_id,
+            "decision_type": decision_type,
+            "question": question,
+            "option_a": option_a if option_a else None,
+            "option_b": option_b if option_b else None,
+            "analysis": {
+                "analysis": analysis_data,
+                "scenario": scenario_data
+            }
+        }).execute()
+    except Exception:
+        pass
+
+    increment_usage()
+
+# =========================================================
+# AI / PDF HELPERS
+# =========================================================
 def parse_json_response(raw_text: str) -> dict:
     clean_text = raw_text.strip()
 
@@ -294,24 +317,6 @@ def calculate_grade(score):
     elif score >= 6:
         return "C"
     return "D"
-
-def save_report(question, decision_type, option_a, option_b, analysis_data, scenario_data):
-    try:
-        admin_supabase.table("reports").insert({
-            "user_id": st.session_state.user_id,
-            "decision_type": decision_type,
-            "question": question,
-            "option_a": option_a if option_a else None,
-            "option_b": option_b if option_b else None,
-            "analysis": {
-                "analysis": analysis_data,
-                "scenario": scenario_data
-            }
-        }).execute()
-    except Exception:
-        pass
-
-    increment_usage()
 
 def clean_pdf_text(text):
     return str(text).replace("–", "-").replace("—", "-").replace("’", "'").replace("•", "-")
@@ -411,9 +416,9 @@ def create_pdf_report(
 
     return pdf.output(dest="S").encode("latin-1")
 
-# =========================================
+# =========================================================
 # PAGE RENDERERS
-# =========================================
+# =========================================================
 def render_auth():
     st.markdown("""
     <div class="hero">
@@ -568,7 +573,7 @@ def render_profile():
     col1, col2 = st.columns([1.1, 0.9], gap="large")
 
     with col1:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="soft-card">', unsafe_allow_html=True)
         st.markdown("### Account identity")
 
         new_username = st.text_input(
@@ -591,7 +596,7 @@ def render_profile():
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col2:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="soft-card">', unsafe_allow_html=True)
         st.markdown("### Account overview")
         st.markdown(f"**Plan:** {subscription.get('plan', 'free').title()}")
         st.markdown(f"**Status:** {subscription.get('status', 'active').title()}")
@@ -862,30 +867,29 @@ Do not add explanation outside JSON.
             st.markdown("### First Next Step")
             st.success(next_step)
 
+            st.markdown("### Strategic Insight")
+            st.success(strategic_insight)
+
             if option_a_future and option_b_future:
                 st.markdown("## 🔮 Scenario Simulation")
                 s1, s2 = st.columns(2)
                 with s1:
-                    st.markdown(f"### Option A Future")
+                    st.markdown("### Option A Future")
                     st.write(f"**{option_a}**")
                     st.write(f"**3 Months:** {option_a_future.get('3_months', 'Not available')}")
                     st.write(f"**1 Year:** {option_a_future.get('1_year', 'Not available')}")
                     st.write(f"**5 Years:** {option_a_future.get('5_years', 'Not available')}")
                 with s2:
-                    st.markdown(f"### Option B Future")
+                    st.markdown("### Option B Future")
                     st.write(f"**{option_b}**")
                     st.write(f"**3 Months:** {option_b_future.get('3_months', 'Not available')}")
                     st.write(f"**1 Year:** {option_b_future.get('1_year', 'Not available')}")
                     st.write(f"**5 Years:** {option_b_future.get('5_years', 'Not available')}")
-
             elif recommended_path_future:
                 st.markdown("## 🔮 Scenario Simulation")
                 st.write(f"**3 Months:** {recommended_path_future.get('3_months', 'Not available')}")
                 st.write(f"**1 Year:** {recommended_path_future.get('1_year', 'Not available')}")
                 st.write(f"**5 Years:** {recommended_path_future.get('5_years', 'Not available')}")
-
-            st.markdown("### Strategic Insight")
-            st.success(strategic_insight)
 
             pdf_bytes = create_pdf_report(
                 question=question,
@@ -921,9 +925,9 @@ Do not add explanation outside JSON.
         except Exception as e:
             st.error(f"Real error: {e}")
 
-# =========================================
+# =========================================================
 # ROUTER
-# =========================================
+# =========================================================
 if not st.session_state.authenticated:
     render_auth()
 elif st.session_state.current_page == "home":
