@@ -76,8 +76,8 @@ def signup_user(email: str, password: str):
         return False, str(e)
 
 if st.session_state.authenticated:
-    st.switch_page("pages/1_Profile.py")
-
+    st.success("Already logged in")
+    st.stop()
 st.markdown("""
 <div class="hero">
     <div style="font-size:38px;font-weight:800;">🧠 Decedo</div>
@@ -120,7 +120,7 @@ with right:
                 st.session_state.user_email = result.user.email
                 st.session_state.user_id = result.user.id
                 st.success("Login successful.")
-                st.switch_page("pages/1_Profile.py")
+                st.return()
             else:
                 st.error("Invalid email or password.")
 
@@ -141,3 +141,4 @@ with right:
                     st.error(str(result))
 
     st.markdown('</div>', unsafe_allow_html=True)
+
