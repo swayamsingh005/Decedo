@@ -113,6 +113,9 @@ if st.session_state.authenticated:
         </div>
         """, unsafe_allow_html=True)
 
+        if st.button("Open Profile", use_container_width=True, type="primary"):
+            st.switch_page("pages/1_Profile.py")
+
     with col2:
         st.markdown("""
         <div class="nav-card">
@@ -122,7 +125,9 @@ if st.session_state.authenticated:
         </div>
         """, unsafe_allow_html=True)
 
-    st.info("Use the left sidebar to open Profile or Decision Lab.")
+        if st.button("Open Decision Lab", use_container_width=True):
+            st.switch_page("pages/2_Decision_Lab.py")
+
     st.stop()
 
 
@@ -190,3 +195,4 @@ with right:
                     st.error(str(result))
 
     st.markdown('</div>', unsafe_allow_html=True)
+
