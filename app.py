@@ -4,6 +4,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from google import genai
 from fpdf import FPDF
+from supabase import create_client, Client
 
 # ===============================
 # PAGE CONFIG
@@ -63,14 +64,27 @@ st.markdown("""
 # ===============================
 # API SETUP
 # ===============================
-API_KEY = st.secrets["GEMINI_API_KEY"]
-client = genai.Client(api_key=API_KEY)
+GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+client = genai.Client(api_key=GEMINI_API_KEY)
+
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_ANON_KEY = st.secrets["SUPABASE_ANON_KEY"]
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # ===============================
-# SESSION HISTORY
+# SESSION STATE
 # ===============================
 if "history" not in st.session_state:
     st.session_state.history = []
+
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+if "user_email" not in st.session_state:
+    st.session_state.user_email = None
+
+if "user_id" not in st.session_state:
+    st.session_state.user_id = None
 
 # ===============================
 # HELPERS
@@ -124,6 +138,66 @@ def calculate_grade(score):
         return "D"
 
 
+def signup_user(email: str, password: str):
+    try:
+        result = supabase.auth.sign_up({
+            "email": email,
+            "password": password
+        })
+        return True, result
+    except Exception as e:
+        return False, str(e)
+
+
+def login_user(email: str, password: str):
+    try:
+        result = supabase.auth.sign_in_with_password({
+            "email": email,
+            "password": password
+        })
+        return True, result
+    except Exception as e:
+        return False, str(e)
+
+
+def logout_user():
+    try:
+        supabase.auth.sign_out()
+    except:
+        pass
+
+
+def save_report_to_supabase(
+    user_id: str,
+    decision_type: str,
+    question: str,
+    option_a: str,
+    option_b: str,
+    analysis_data: dict,
+    scenario_data: dict
+):
+    try:
+        report_payload = {
+            "user_id": user_id,
+            "decision_type": decision_type,
+            "question": question,
+            "option_a": option_a if option_a else None,
+            "option_b": option_b if option_b else None,
+            "analysis": {
+                "analysis": analysis_data,
+                "scenario": scenario_data
+            }
+        }
+        supabase.table("reports").insert(report_payload).execute()
+        return True
+    except Exception as e:
+        st.warning(f"Report save warning: {e}")
+        return False
+
+
+# ===============================
+# PDF CLASS
+# ===============================
 class PremiumPDF(FPDF):
     def header(self):
         pass
@@ -231,7 +305,6 @@ def create_pdf_report(
 
     india_time = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d %b %Y, %I:%M %p IST")
 
-    # Cover / Header
     pdf.set_fill_color(248, 250, 252)
     pdf.rect(10, 10, 190, 28, style="F")
 
@@ -250,7 +323,6 @@ def create_pdf_report(
 
     pdf.ln(8)
 
-    # Decision overview
     pdf.section_title("Decision Overview")
     pdf.subsection("Decision Type")
     pdf.body_text(decision_type)
@@ -258,19 +330,18 @@ def create_pdf_report(
     pdf.subsection("Decision Question")
     pdf.body_text(question)
 
-    # Summary
     pdf.section_title("Decision Summary")
     pdf.body_text(summary)
 
-    # Metrics
     pdf.section_title("Decision Metrics")
     pdf.metric_row("Best Choice", best_option, "Risk Level", risk_level)
     pdf.metric_row("Score", decision_score, "Confidence", confidence_level)
     pdf.metric_row("Decision Grade", decision_grade, "Decision Type", decision_type)
-    pdf.metric_row("Option A Score", option_a_score if option_a_score else "N/A",
-                   "Option B Score", option_b_score if option_b_score else "N/A")
+    pdf.metric_row(
+        "Option A Score", option_a_score if option_a_score else "N/A",
+        "Option B Score", option_b_score if option_b_score else "N/A"
+    )
 
-    # Lenses
     pdf.section_title("Decision Lenses")
 
     pdf.subsection("Market Lens")
@@ -285,16 +356,13 @@ def create_pdf_report(
     pdf.subsection("Growth Lens")
     pdf.body_text(growth_lens)
 
-    # Why
     if why_points:
         pdf.section_title("Why")
         pdf.bullet_points(why_points)
 
-    # Next step
     pdf.section_title("First Next Step")
     pdf.body_text(next_step)
 
-    # Scenario simulation
     pdf.section_title("Scenario Simulation")
 
     if option_a_future and option_b_future:
@@ -316,7 +384,6 @@ def create_pdf_report(
         pdf.body_text(f"1 Year: {recommended_path_future.get('1_year', 'Not available')}")
         pdf.body_text(f"5 Years: {recommended_path_future.get('5_years', 'Not available')}")
 
-    # Strategic insight
     pdf.section_title("Strategic Insight")
     pdf.body_text(strategic_insight)
 
@@ -324,11 +391,65 @@ def create_pdf_report(
 
 
 # ===============================
+# LOGIN / SIGNUP SCREEN
+# ===============================
+if not st.session_state.authenticated:
+    st.title("🧠 Decedo")
+    st.subheader("AI Decision Intelligence Platform")
+    st.caption("Create an account or log in to continue.")
+    st.divider()
+
+    tab1, tab2 = st.tabs(["Login", "Create Account"])
+
+    with tab1:
+        st.markdown("### Login")
+        login_email = st.text_input("Email", key="login_email")
+        login_password = st.text_input("Password", type="password", key="login_password")
+
+        if st.button("Login", type="primary", use_container_width=True):
+            ok, result = login_user(login_email, login_password)
+            if ok and result.user:
+                st.session_state.authenticated = True
+                st.session_state.user_email = result.user.email
+                st.session_state.user_id = result.user.id
+                st.success("Login successful.")
+                st.rerun()
+            else:
+                st.error("Invalid email or password.")
+
+    with tab2:
+        st.markdown("### Create Account")
+        signup_email = st.text_input("Email", key="signup_email")
+        signup_password = st.text_input("Password", type="password", key="signup_password")
+        signup_confirm = st.text_input("Confirm Password", type="password", key="signup_confirm")
+
+        if st.button("Create Account", use_container_width=True):
+            if signup_password != signup_confirm:
+                st.error("Passwords do not match.")
+            else:
+                ok, result = signup_user(signup_email, signup_password)
+                if ok:
+                    st.success("Account created. Check your email if confirmation is enabled, then log in.")
+                else:
+                    st.error(str(result))
+
+    st.stop()
+
+# ===============================
 # SIDEBAR INPUT PANEL
 # ===============================
 with st.sidebar:
     st.title("🧠 Decedo")
-    st.caption("AI Decision Intelligence Platform")
+    st.caption(f"Logged in as: {st.session_state.user_email}")
+    st.divider()
+
+    if st.button("Logout", use_container_width=True):
+        logout_user()
+        st.session_state.authenticated = False
+        st.session_state.user_email = None
+        st.session_state.user_id = None
+        st.rerun()
+
     st.divider()
 
     decision_type = st.selectbox(
@@ -368,9 +489,7 @@ st.divider()
 # ANALYZE BUTTON LOGIC
 # ===============================
 if analyze:
-
     if question.strip():
-
         if option_a.strip() and option_b.strip():
             analysis_prompt = f"""
 You are Decedo, an AI decision intelligence assistant.
@@ -477,7 +596,6 @@ Rules:
             growth_lens = analysis_data.get("growth_lens", "")
             why_points = analysis_data.get("why", [])
 
-            # Scenario simulation
             if option_a.strip() and option_b.strip():
                 scenario_prompt = f"""
 You are Decedo, an AI strategic simulation engine.
@@ -602,13 +720,25 @@ Rules:
             recommended_path_future = scenario_data.get("recommended_path_future", {})
             strategic_insight = scenario_data.get("strategic_insight", "Not available")
 
-            st.session_state.history.append({
+            # save to session and Supabase
+            history_item = {
                 "question": question,
                 "answer": {
                     "analysis": analysis_data,
                     "scenario": scenario_data
                 }
-            })
+            }
+            st.session_state.history.append(history_item)
+
+            save_report_to_supabase(
+                user_id=st.session_state.user_id,
+                decision_type=decision_type,
+                question=question,
+                option_a=option_a,
+                option_b=option_b,
+                analysis_data=analysis_data,
+                scenario_data=scenario_data
+            )
 
             # RESULT UI
             st.markdown("## 📊 Decision Dashboard")
@@ -760,7 +890,6 @@ Rules:
                 st.warning("⚠️ AI request limit reached. Please wait a minute and try again.")
             else:
                 st.error(f"Real error: {e}")
-
     else:
         st.warning("Please enter a decision question first.")
 
