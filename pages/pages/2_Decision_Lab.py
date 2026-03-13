@@ -6,7 +6,11 @@ from google import genai
 from fpdf import FPDF
 from supabase import create_client, Client
 
-st.set_page_config(page_title="Decision Lab - Decedo", page_icon="🧠", layout="wide")
+st.set_page_config(
+    page_title="Decision Lab - Decedo",
+    page_icon="🧠",
+    layout="wide"
+)
 
 st.markdown("""
 <style>
@@ -73,11 +77,13 @@ if "history" not in st.session_state:
 user_id = st.session_state["user_id"]
 user_email = st.session_state["user_email"]
 
+
 def logout_user():
     try:
         supabase.auth.sign_out()
     except Exception:
         pass
+
 
 def get_profile():
     try:
@@ -88,6 +94,7 @@ def get_profile():
         pass
     return None
 
+
 def get_user_plan(user_id: str):
     try:
         result = admin_supabase.table("subscriptions").select("*").eq("user_id", user_id).limit(1).execute()
@@ -97,7 +104,9 @@ def get_user_plan(user_id: str):
         pass
     return "free", "active"
 
+
 def get_plan_limit(plan: str):
+    plan = (plan or "free").lower()
     if plan == "free":
         return 3
     if plan == "pro":
@@ -106,6 +115,7 @@ def get_plan_limit(plan: str):
         return None
     return 3
 
+
 def get_usage():
     try:
         result = admin_supabase.table("usage_tracking").select("*").eq("user_id", user_id).limit(1).execute()
@@ -113,12 +123,17 @@ def get_usage():
             return result.data[0]
     except Exception:
         pass
-    return {"reports_today": 0, "last_reset": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()}
+    return {
+        "reports_today": 0,
+        "last_reset": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
+    }
+
 
 def reset_usage_if_new_day():
     usage = get_usage()
     now = datetime.now(ZoneInfo("Asia/Kolkata"))
     today = now.date()
+
     try:
         last_reset_date = datetime.fromisoformat(
             usage["last_reset"].replace("Z", "+00:00")
@@ -133,7 +148,9 @@ def reset_usage_if_new_day():
         }).eq("user_id", user_id).execute()
         usage["reports_today"] = 0
         usage["last_reset"] = now.isoformat()
+
     return usage
+
 
 def user_can_generate():
     plan, status = get_user_plan(user_id)
@@ -143,33 +160,42 @@ def user_can_generate():
 
     if status != "active":
         return False, plan, used, limit
+
     if limit is None:
         return True, plan, used, limit
+
     return used < limit, plan, used, limit
+
 
 def increment_usage():
     usage = reset_usage_if_new_day()
     used = usage.get("reports_today", 0)
+
     admin_supabase.table("usage_tracking").update({
         "reports_today": used + 1,
         "last_reset": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
     }).eq("user_id", user_id).execute()
 
+
 def parse_json_response(raw_text: str) -> dict:
     clean_text = raw_text.strip()
+
     if clean_text.startswith("```json"):
         clean_text = clean_text.replace("```json", "", 1).strip()
     if clean_text.startswith("```"):
         clean_text = clean_text.replace("```", "", 1).strip()
     if clean_text.endswith("```"):
         clean_text = clean_text[:-3].strip()
+
     return json.loads(clean_text)
+
 
 def calculate_grade(score):
     try:
         score = float(str(score).replace("/10", "").strip())
     except Exception:
         return "N/A"
+
     if score >= 9:
         return "A+"
     elif score >= 8:
@@ -179,6 +205,7 @@ def calculate_grade(score):
     elif score >= 6:
         return "C"
     return "D"
+
 
 def save_report(question, decision_type, option_a, option_b, analysis_data, scenario_data):
     admin_supabase.table("reports").insert({
@@ -194,8 +221,10 @@ def save_report(question, decision_type, option_a, option_b, analysis_data, scen
     }).execute()
     increment_usage()
 
+
 def clean_pdf_text(text):
     return str(text).replace("–", "-").replace("—", "-").replace("’", "'").replace("•", "-")
+
 
 class PremiumPDF(FPDF):
     def footer(self):
@@ -203,11 +232,31 @@ class PremiumPDF(FPDF):
         self.set_font("Arial", "I", 9)
         self.cell(0, 8, f"Page {self.page_no()}", align="C")
 
-def create_pdf_report(question, decision_type, summary, best_option, risk_level, decision_score,
-                      confidence_level, decision_grade, market_lens, execution_lens, risk_lens,
-                      growth_lens, why_points, next_step, strategic_insight,
-                      option_a="", option_b="", option_a_score="", option_b_score="",
-                      option_a_future=None, option_b_future=None, recommended_path_future=None):
+
+def create_pdf_report(
+    question,
+    decision_type,
+    summary,
+    best_option,
+    risk_level,
+    decision_score,
+    confidence_level,
+    decision_grade,
+    market_lens,
+    execution_lens,
+    risk_lens,
+    growth_lens,
+    why_points,
+    next_step,
+    strategic_insight,
+    option_a="",
+    option_b="",
+    option_a_score="",
+    option_b_score="",
+    option_a_future=None,
+    option_b_future=None,
+    recommended_path_future=None
+):
     pdf = PremiumPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
@@ -268,13 +317,18 @@ def create_pdf_report(question, decision_type, summary, best_option, risk_level,
         pdf.multi_cell(0, 7, clean_pdf_text(f"3 Months: {recommended_path_future.get('3_months', 'Not available')}"))
         pdf.multi_cell(0, 7, clean_pdf_text(f"1 Year: {recommended_path_future.get('1_year', 'Not available')}"))
         pdf.multi_cell(0, 7, clean_pdf_text(f"5 Years: {recommended_path_future.get('5_years', 'Not available')}"))
-    pdf.ln(2)
 
+    pdf.ln(2)
     sec("Strategic Insight", strategic_insight)
+
     return pdf.output(dest="S").encode("latin-1")
 
+
 profile = get_profile()
-username = profile["username"] if profile and profile.get("username") else user_email.split("@")[0]
+username = user_email.split("@")[0]
+if profile and profile.get("username"):
+    username = profile["username"]
+
 can_generate, plan, used_today, limit = user_can_generate()
 
 with st.sidebar:
@@ -285,15 +339,22 @@ with st.sidebar:
     st.markdown(f"**Usage Today:** {used_today} / {'Unlimited' if limit is None else limit}")
     if limit is not None:
         st.progress(min(used_today / limit, 1.0))
+
     st.divider()
+
     if st.button("Profile", use_container_width=True):
         st.switch_page("pages/1_Profile.py")
+
+    if st.button("Back to Home", use_container_width=True):
+        st.switch_page("app.py")
+
     if st.button("Logout", use_container_width=True):
         logout_user()
         st.session_state.authenticated = False
         st.session_state.user_email = None
         st.session_state.user_id = None
         st.switch_page("app.py")
+
     st.divider()
 
     decision_type = st.selectbox("Decision Type", ["Career", "Business", "Investment", "Life"])
@@ -306,7 +367,7 @@ st.markdown(f"""
 <div class="hero-card">
     <div style="font-size:34px;font-weight:800;">🔬 Decision Lab</div>
     <div style="font-size:18px;font-weight:600;margin-top:6px;">
-        Run premium AI decision analysis, scenario simulation, and PDF reporting
+        Premium AI decision analysis, scenario simulation, and downloadable reports
     </div>
     <div style="font-size:14px;opacity:0.9;margin-top:8px;">
         Profile: {username} • Plan: {plan.title()}
@@ -543,6 +604,15 @@ Use this exact JSON structure:
 
         save_report(question, decision_type, option_a, option_b, analysis_data, scenario_data)
 
+        history_item = {
+            "question": question,
+            "answer": {
+                "analysis": analysis_data,
+                "scenario": scenario_data
+            }
+        }
+        st.session_state.history.append(history_item)
+
         st.markdown("## 📊 Decision Dashboard")
 
         st.markdown("### Decision Summary")
@@ -550,11 +620,13 @@ Use this exact JSON structure:
 
         st.markdown("### Decision Lenses")
         l1, l2 = st.columns(2)
+
         with l1:
             st.markdown("#### Market Lens")
             st.write(market_lens or "Not available")
             st.markdown("#### Execution Lens")
             st.write(execution_lens or "Not available")
+
         with l2:
             st.markdown("#### Risk Lens")
             st.write(risk_lens or "Not available")
@@ -605,6 +677,7 @@ Use this exact JSON structure:
 
         if option_a_future and option_b_future:
             s1, s2 = st.columns(2)
+
             with s1:
                 st.markdown("### Option A Future")
                 st.markdown(f"**{option_a}**")
@@ -614,6 +687,7 @@ Use this exact JSON structure:
                 st.write(option_a_future.get("1_year", "Not available"))
                 st.markdown("**5 Years**")
                 st.write(option_a_future.get("5_years", "Not available"))
+
             with s2:
                 st.markdown("### Option B Future")
                 st.markdown(f"**{option_b}**")
@@ -623,6 +697,7 @@ Use this exact JSON structure:
                 st.write(option_b_future.get("1_year", "Not available"))
                 st.markdown("**5 Years**")
                 st.write(option_b_future.get("5_years", "Not available"))
+
         elif recommended_path_future:
             st.markdown("### Recommended Path Future")
             st.markdown("**3 Months**")
@@ -638,6 +713,7 @@ Use this exact JSON structure:
 
         st.divider()
         st.markdown("## 📄 Download Report")
+
         pdf_bytes = create_pdf_report(
             question=question,
             decision_type=decision_type,
@@ -662,13 +738,25 @@ Use this exact JSON structure:
             option_b_future=option_b_future,
             recommended_path_future=recommended_path_future
         )
+
+        safe_filename = question[:40].replace(" ", "_").replace("/", "_").replace("\\", "_")
+        if not safe_filename:
+            safe_filename = "decedo_decision_report"
+
         st.download_button(
             label="Download Decision Report (PDF)",
             data=pdf_bytes,
-            file_name="decedo_decision_report.pdf",
+            file_name=f"{safe_filename}.pdf",
             mime="application/pdf",
             use_container_width=True
         )
 
     except Exception as e:
         st.error(f"Real error: {e}")
+
+if st.session_state.history:
+    st.divider()
+    st.markdown("## 📜 Recent Decisions")
+    for item in reversed(st.session_state.history[-5:]):
+        with st.expander(item["question"]):
+            st.write(item["answer"])
