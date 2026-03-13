@@ -3,7 +3,11 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from supabase import create_client, Client
 
-st.set_page_config(page_title="Profile - Decedo", page_icon="🧠", layout="wide")
+st.set_page_config(
+    page_title="Profile - Decedo",
+    page_icon="🧠",
+    layout="wide"
+)
 
 st.markdown("""
 <style>
@@ -24,7 +28,7 @@ st.markdown("""
         margin-bottom: 20px;
     }
     .glass-card {
-        background: rgba(255,255,255,0.96);
+        background: rgba(255,255,255,0.97);
         border: 1px solid #e5e7eb;
         border-radius: 22px;
         padding: 22px;
@@ -60,11 +64,13 @@ if not st.session_state.get("authenticated", False):
 user_id = st.session_state["user_id"]
 user_email = st.session_state["user_email"]
 
+
 def logout_user():
     try:
         supabase.auth.sign_out()
     except Exception:
         pass
+
 
 def get_profile():
     try:
@@ -75,10 +81,12 @@ def get_profile():
         pass
     return None
 
+
 def ensure_profile():
     existing = get_profile()
     if existing:
         return existing
+
     try:
         admin_supabase.table("profiles").upsert({
             "user_id": user_id,
@@ -88,7 +96,9 @@ def ensure_profile():
         }).execute()
     except Exception:
         pass
+
     return get_profile()
+
 
 def update_username(username: str):
     try:
@@ -99,6 +109,7 @@ def update_username(username: str):
     except Exception:
         return False
 
+
 def get_subscription():
     try:
         result = admin_supabase.table("subscriptions").select("*").eq("user_id", user_id).limit(1).execute()
@@ -107,6 +118,7 @@ def get_subscription():
     except Exception:
         pass
     return {"plan": "free", "status": "active"}
+
 
 def get_usage():
     try:
@@ -117,18 +129,26 @@ def get_usage():
         pass
     return {"reports_today": 0}
 
+
 profile = ensure_profile()
 subscription = get_subscription()
 usage = get_usage()
 
-username_value = profile["username"] if profile and profile.get("username") else ""
+username_value = ""
+if profile and profile.get("username"):
+    username_value = profile["username"]
 
 with st.sidebar:
     st.title("🧠 Decedo")
     st.caption(f"Logged in as: {user_email}")
     st.divider()
+
     if st.button("Go to Decision Lab", use_container_width=True, type="primary"):
         st.switch_page("pages/2_Decision_Lab.py")
+
+    if st.button("Back to Home", use_container_width=True):
+        st.switch_page("app.py")
+
     if st.button("Logout", use_container_width=True):
         logout_user()
         st.session_state.authenticated = False
@@ -143,7 +163,7 @@ st.markdown(f"""
         {username_value if username_value else "Set your Decedo username"}
     </div>
     <div style="font-size:14px;opacity:0.9;margin-top:8px;">
-        Personalize your Decedo identity, view your current plan, and manage your account.
+        Personalize your identity, manage your account, and review your current usage.
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -153,19 +173,30 @@ col1, col2 = st.columns([1.1, 0.9], gap="large")
 with col1:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown("### Account identity")
-    new_username = st.text_input("Choose your username", value=username_value, placeholder="Example: swayam")
+
+    new_username = st.text_input(
+        "Choose your username",
+        value=username_value,
+        placeholder="Example: swayam"
+    )
+
     if st.button("Save Username", use_container_width=True):
-        if update_username(new_username):
-            st.success("Username updated.")
-            st.rerun()
+        if new_username.strip():
+            if update_username(new_username):
+                st.success("Username updated successfully.")
+                st.rerun()
+            else:
+                st.error("Could not update username.")
         else:
-            st.error("Could not update username.")
+            st.warning("Username cannot be empty.")
+
     st.markdown(f"**Email:** {user_email}")
     st.markdown('</div>', unsafe_allow_html=True)
 
 with col2:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     st.markdown("### Account overview")
+
     st.markdown(f"""
     <div class="plan-box">
         <div style="font-size:13px;font-weight:700;color:#1d4ed8;">Current Plan</div>
@@ -178,6 +209,7 @@ with col2:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("")
