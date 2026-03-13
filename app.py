@@ -41,9 +41,6 @@ st.markdown("""
         box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
         text-align: center;
         min-height: 220px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
     }
     .stButton>button {
         border-radius: 14px;
@@ -90,9 +87,6 @@ def signup_user(email: str, password: str):
         return False, str(e)
 
 
-# ===============================
-# LOGGED-IN HOME SCREEN
-# ===============================
 if st.session_state.authenticated:
     st.markdown("""
     <div class="hero">
@@ -118,7 +112,6 @@ if st.session_state.authenticated:
             <p>Manage username, plan, and account overview.</p>
         </div>
         """, unsafe_allow_html=True)
-        st.page_link("pages/1_Profile.py", label="Open Profile", icon="👤")
 
     with col2:
         st.markdown("""
@@ -128,13 +121,11 @@ if st.session_state.authenticated:
             <p>Run decision analysis, scenario simulation, and download premium reports.</p>
         </div>
         """, unsafe_allow_html=True)
-        st.page_link("pages/2_Decision_Lab.py", label="Open Decision Lab", icon="🔬")
 
+    st.info("Use the left sidebar to open Profile or Decision Lab.")
     st.stop()
 
-# ===============================
-# LOGIN / SIGNUP SCREEN
-# ===============================
+
 st.markdown("""
 <div class="hero">
     <div style="font-size:38px;font-weight:800;">🧠 Decedo</div>
