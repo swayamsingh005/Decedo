@@ -114,7 +114,7 @@ if st.session_state.authenticated:
         """, unsafe_allow_html=True)
 
         if st.button("Open Profile", use_container_width=True, type="primary"):
-            st.switch_page("pages/1_Profile.py")
+            pass
 
     with col2:
         st.markdown("""
@@ -126,7 +126,7 @@ if st.session_state.authenticated:
         """, unsafe_allow_html=True)
 
         if st.button("Open Decision Lab", use_container_width=True):
-            st.switch_page("pages/2_Decision_Lab.py")
+            pass
 
     st.stop()
 
@@ -195,4 +195,5 @@ with right:
                     st.error(str(result))
 
     st.markdown('</div>', unsafe_allow_html=True)
+
 
