@@ -27,11 +27,19 @@ st.markdown("""
         margin-bottom: 24px;
     }
     .auth-card {
-        background: rgba(255,255,255,0.95);
+        background: rgba(255,255,255,0.96);
         border: 1px solid #e5e7eb;
         border-radius: 24px;
         padding: 24px;
         box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+    .nav-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 24px;
+        padding: 28px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        text-align: center;
     }
     .stButton>button {
         border-radius: 14px;
@@ -55,6 +63,7 @@ if "user_email" not in st.session_state:
 if "user_id" not in st.session_state:
     st.session_state.user_id = None
 
+
 def login_user(email: str, password: str):
     try:
         result = supabase.auth.sign_in_with_password({
@@ -64,6 +73,7 @@ def login_user(email: str, password: str):
         return True, result
     except Exception as e:
         return False, str(e)
+
 
 def signup_user(email: str, password: str):
     try:
@@ -75,9 +85,54 @@ def signup_user(email: str, password: str):
     except Exception as e:
         return False, str(e)
 
+
+# ===============================
+# LOGGED-IN HOME SCREEN
+# ===============================
 if st.session_state.authenticated:
-    st.success("Already logged in")
+    st.markdown("""
+    <div class="hero">
+        <div style="font-size:38px;font-weight:800;">🧠 Decedo</div>
+        <div style="font-size:20px;font-weight:600;margin-top:6px;">
+            AI Operating System for Decisions
+        </div>
+        <div style="font-size:15px;opacity:0.9;margin-top:10px;max-width:760px;">
+            Premium decision intelligence for ambitious people.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.success(f"Logged in as {st.session_state.user_email}")
+
+    col1, col2 = st.columns(2, gap="large")
+
+    with col1:
+        st.markdown("""
+        <div class="nav-card">
+            <div style="font-size:28px;">👤</div>
+            <h3>Profile</h3>
+            <p>Manage username, plan, and account overview.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Open Profile", use_container_width=True, type="primary"):
+            st.switch_page("pages/1_Profile.py")
+
+    with col2:
+        st.markdown("""
+        <div class="nav-card">
+            <div style="font-size:28px;">🔬</div>
+            <h3>Decision Lab</h3>
+            <p>Run decision analysis, scenario simulation, and download premium reports.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Open Decision Lab", use_container_width=True):
+            st.switch_page("pages/2_Decision_Lab.py")
+
     st.stop()
+
+# ===============================
+# LOGIN / SIGNUP SCREEN
+# ===============================
 st.markdown("""
 <div class="hero">
     <div style="font-size:38px;font-weight:800;">🧠 Decedo</div>
@@ -96,16 +151,17 @@ with left:
     st.markdown("""
     <div class="auth-card">
         <h2 style="margin-top:0;">Why Decedo feels premium</h2>
-        <p>• Decision intelligence dashboard</p>
-        <p>• AI debate mode</p>
-        <p>• Scenario simulation</p>
-        <p>• Strategic insights</p>
-        <p>• Premium PDF reports</p>
+        <p>• AI decision intelligence dashboard</p>
+        <p>• scenario simulation</p>
+        <p>• strategic insight</p>
+        <p>• premium PDF reports</p>
+        <p>• SaaS-style user system</p>
     </div>
     """, unsafe_allow_html=True)
 
 with right:
     st.markdown('<div class="auth-card">', unsafe_allow_html=True)
+
     tab1, tab2 = st.tabs(["Login", "Create Account"])
 
     with tab1:
@@ -136,10 +192,8 @@ with right:
             else:
                 ok, result = signup_user(signup_email, signup_password)
                 if ok:
-                    st.success("Account created. Please log in.")
+                    st.success("Account created. Now login.")
                 else:
                     st.error(str(result))
 
     st.markdown('</div>', unsafe_allow_html=True)
-
-
