@@ -1,18 +1,11 @@
 import streamlit as st
-import json
-from datetime import datetime
-from zoneinfo import ZoneInfo
-from google import genai
-from fpdf import FPDF
 from supabase import create_client, Client
 
-# ===============================
-# PAGE CONFIG
-# ===============================
 st.set_page_config(
-    page_title="Decedo - AI Decision Intelligence",
+    page_title="Decedo",
     page_icon="🧠",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 st.markdown("""
@@ -20,184 +13,47 @@ st.markdown("""
     .main {
         background: linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%);
     }
-
-    section[data-testid="stSidebar"] {
-        background: #ffffff;
-        border-right: 1px solid #e5e7eb;
-    }
-
     .block-container {
+        max-width: 1180px;
         padding-top: 2rem;
         padding-bottom: 2rem;
-        max-width: 1200px;
     }
-
-    h1, h2, h3 {
-        color: #111827;
+    .hero {
+        background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+        border-radius: 28px;
+        padding: 36px 32px;
+        color: white;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+        margin-bottom: 24px;
     }
-
-    div[data-testid="stMetric"] {
-        background: white;
+    .auth-card {
+        background: rgba(255,255,255,0.95);
         border: 1px solid #e5e7eb;
-        padding: 14px;
-        border-radius: 18px;
-        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+        border-radius: 24px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
     }
-
     .stButton>button {
         border-radius: 14px;
         font-weight: 700;
         height: 3em;
     }
-
-    .stTextInput>div>div>input,
-    .stTextArea textarea,
-    .stSelectbox>div>div {
+    .stTextInput>div>div>input {
         border-radius: 12px;
-    }
-
-    .stAlert {
-        border-radius: 16px;
-    }
-
-    .hero-card {
-        background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
-        padding: 24px;
-        border-radius: 24px;
-        color: white;
-        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
-        margin-bottom: 20px;
-    }
-
-    .section-card {
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 20px;
-        padding: 18px;
-        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
-        margin-bottom: 14px;
-    }
-
-    .plan-badge {
-        display: inline-block;
-        padding: 8px 14px;
-        border-radius: 999px;
-        font-size: 13px;
-        font-weight: 700;
-        background: #dbeafe;
-        color: #1d4ed8;
-        margin-bottom: 8px;
-    }
-
-    .sidebar-card {
-        background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
-        border: 1px solid #dbeafe;
-        border-radius: 18px;
-        padding: 14px;
-        margin-bottom: 14px;
-    }
-
-    .premium-note {
-        background: #fff7ed;
-        border: 1px solid #fdba74;
-        color: #9a3412;
-        border-radius: 14px;
-        padding: 12px 14px;
-        font-weight: 600;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# ===============================
-# API SETUP
-# ===============================
-GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
-gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_ANON_KEY = st.secrets["SUPABASE_ANON_KEY"]
-SUPABASE_SERVICE_ROLE_KEY = st.secrets["SUPABASE_SERVICE_ROLE_KEY"]
-
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
-admin_supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-
-# ===============================
-# SESSION STATE
-# ===============================
-if "history" not in st.session_state:
-    st.session_state.history = []
 
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
-
 if "user_email" not in st.session_state:
     st.session_state.user_email = None
-
 if "user_id" not in st.session_state:
     st.session_state.user_id = None
-
-# ===============================
-# HELPERS
-# ===============================
-def parse_json_response(raw_text: str) -> dict:
-    clean_text = raw_text.strip()
-
-    if clean_text.startswith("```json"):
-        clean_text = clean_text.replace("```json", "", 1).strip()
-    if clean_text.startswith("```"):
-        clean_text = clean_text.replace("```", "", 1).strip()
-    if clean_text.endswith("```"):
-        clean_text = clean_text[:-3].strip()
-
-    return json.loads(clean_text)
-
-
-def safe_text(value):
-    if value is None:
-        return "Not available"
-    return str(value)
-
-
-def clean_pdf_text(text):
-    return (
-        safe_text(text)
-        .replace("–", "-")
-        .replace("—", "-")
-        .replace("’", "'")
-        .replace("“", '"')
-        .replace("”", '"')
-        .replace("•", "-")
-    )
-
-
-def calculate_grade(score):
-    try:
-        score = float(str(score).replace("/10", "").strip())
-    except Exception:
-        return "N/A"
-
-    if score >= 9:
-        return "A+"
-    elif score >= 8:
-        return "A"
-    elif score >= 7:
-        return "B"
-    elif score >= 6:
-        return "C"
-    else:
-        return "D"
-
-
-def signup_user(email: str, password: str):
-    try:
-        result = supabase.auth.sign_up({
-            "email": email,
-            "password": password
-        })
-        return True, result
-    except Exception as e:
-        return False, str(e)
-
 
 def login_user(email: str, password: str):
     try:
@@ -209,372 +65,51 @@ def login_user(email: str, password: str):
     except Exception as e:
         return False, str(e)
 
-
-def logout_user():
+def signup_user(email: str, password: str):
     try:
-        supabase.auth.sign_out()
-    except Exception:
-        pass
-
-
-def ensure_user_setup(user_id: str):
-    india_now = datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
-
-    try:
-        admin_supabase.table("subscriptions").upsert({
-            "user_id": user_id,
-            "plan": "free",
-            "status": "active",
-            "created_at": india_now
-        }).execute()
+        result = supabase.auth.sign_up({
+            "email": email,
+            "password": password
+        })
+        return True, result
     except Exception as e:
-        st.warning(f"Subscription setup warning: {e}")
-
-    try:
-        admin_supabase.table("usage_tracking").upsert({
-            "user_id": user_id,
-            "reports_today": 0,
-            "last_reset": india_now
-        }).execute()
-    except Exception as e:
-        st.warning(f"Usage setup warning: {e}")
-
-
-def get_plan_limit(plan: str):
-    plan = (plan or "free").lower()
-    if plan == "free":
-        return 3
-    if plan == "pro":
-        return 50
-    if plan == "premium":
-        return None
-    return 3
-
-
-def get_user_plan(user_id: str):
-    try:
-        result = admin_supabase.table("subscriptions").select("*").eq("user_id", user_id).limit(1).execute()
-        if result.data:
-            return result.data[0].get("plan", "free"), result.data[0].get("status", "active")
-    except Exception as e:
-        st.warning(f"Plan fetch warning: {e}")
-    return "free", "active"
-
-
-def get_usage_info(user_id: str):
-    try:
-        result = admin_supabase.table("usage_tracking").select("*").eq("user_id", user_id).limit(1).execute()
-        if result.data:
-            return result.data[0]
-    except Exception as e:
-        st.warning(f"Usage fetch warning: {e}")
-    return None
-
-
-def reset_usage_if_new_day(user_id: str):
-    usage = get_usage_info(user_id)
-    india_now = datetime.now(ZoneInfo("Asia/Kolkata"))
-    today = india_now.date()
-
-    if not usage:
-        try:
-            admin_supabase.table("usage_tracking").upsert({
-                "user_id": user_id,
-                "reports_today": 0,
-                "last_reset": india_now.isoformat()
-            }).execute()
-        except Exception as e:
-            st.warning(f"Usage reset setup warning: {e}")
-        return {"user_id": user_id, "reports_today": 0, "last_reset": india_now.isoformat()}
-
-    last_reset_raw = usage.get("last_reset")
-    try:
-        last_reset_date = datetime.fromisoformat(last_reset_raw.replace("Z", "+00:00")).astimezone(
-            ZoneInfo("Asia/Kolkata")
-        ).date()
-    except Exception:
-        last_reset_date = today
-
-    if last_reset_date != today:
-        try:
-            admin_supabase.table("usage_tracking").update({
-                "reports_today": 0,
-                "last_reset": india_now.isoformat()
-            }).eq("user_id", user_id).execute()
-            usage["reports_today"] = 0
-            usage["last_reset"] = india_now.isoformat()
-        except Exception as e:
-            st.warning(f"Daily reset warning: {e}")
-
-    return usage
-
-
-def increment_usage(user_id: str):
-    try:
-        usage = reset_usage_if_new_day(user_id)
-        current_reports = usage.get("reports_today", 0)
-
-        admin_supabase.table("usage_tracking").update({
-            "reports_today": current_reports + 1,
-            "last_reset": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
-        }).eq("user_id", user_id).execute()
-    except Exception as e:
-        st.warning(f"Usage tracking warning: {e}")
-
-
-def user_can_generate_report(user_id: str):
-    plan, status = get_user_plan(user_id)
-    usage = reset_usage_if_new_day(user_id)
-    used_today = usage.get("reports_today", 0)
-    plan_limit = get_plan_limit(plan)
-
-    if status != "active":
-        return False, plan, used_today, plan_limit
-
-    if plan_limit is None:
-        return True, plan, used_today, plan_limit
-
-    return used_today < plan_limit, plan, used_today, plan_limit
-
-
-def save_report_to_supabase(
-    user_id: str,
-    decision_type: str,
-    question: str,
-    option_a: str,
-    option_b: str,
-    analysis_data: dict,
-    scenario_data: dict
-):
-    report_payload = {
-        "user_id": user_id,
-        "decision_type": decision_type,
-        "question": question,
-        "option_a": option_a if option_a else None,
-        "option_b": option_b if option_b else None,
-        "analysis": {
-            "analysis": analysis_data,
-            "scenario": scenario_data
-        }
-    }
-
-    try:
-        admin_supabase.table("reports").insert(report_payload).execute()
-        increment_usage(user_id)
-        return True
-    except Exception as e:
-        st.error("Supabase report save failed.")
-        st.code(str(e))
-        return False
-
-
-# ===============================
-# PDF CLASS
-# ===============================
-class PremiumPDF(FPDF):
-    def header(self):
-        pass
-
-    def footer(self):
-        self.set_y(-12)
-        self.set_font("Arial", "I", 9)
-        self.set_text_color(120, 120, 120)
-        self.cell(0, 8, f"Page {self.page_no()}", align="C")
-
-    def section_title(self, title):
-        self.ln(2)
-        self.set_fill_color(240, 244, 248)
-        self.set_text_color(25, 35, 50)
-        self.set_font("Arial", "B", 13)
-        self.cell(0, 10, clean_pdf_text(title), ln=True, fill=True)
-        self.ln(2)
-
-    def body_text(self, text, font_size=11):
-        self.set_font("Arial", "", font_size)
-        self.set_text_color(50, 50, 50)
-        self.multi_cell(0, 7, clean_pdf_text(text))
-        self.ln(1)
-
-    def bullet_points(self, points):
-        self.set_font("Arial", "", 11)
-        self.set_text_color(50, 50, 50)
-        for point in points:
-            self.multi_cell(0, 7, clean_pdf_text(f"- {point}"))
-        self.ln(1)
-
-    def subsection(self, title):
-        self.set_font("Arial", "B", 11)
-        self.set_text_color(30, 30, 30)
-        self.cell(0, 8, clean_pdf_text(title), ln=True)
-
-    def divider(self):
-        y = self.get_y()
-        self.set_draw_color(230, 230, 230)
-        self.line(10, y, 200, y)
-        self.ln(4)
-
-    def metric_row(self, label1, value1, label2, value2):
-        left_x = 10
-        right_x = 105
-        y = self.get_y()
-        row_h = 16
-
-        self.set_draw_color(225, 229, 235)
-        self.set_fill_color(255, 255, 255)
-
-        self.rect(left_x, y, 90, row_h, style="DF")
-        self.rect(right_x, y, 90, row_h, style="DF")
-
-        self.set_xy(left_x + 3, y + 2)
-        self.set_font("Arial", "B", 9)
-        self.set_text_color(100, 100, 100)
-        self.cell(0, 4, clean_pdf_text(label1))
-
-        self.set_xy(left_x + 3, y + 8)
-        self.set_font("Arial", "", 11)
-        self.set_text_color(20, 20, 20)
-        self.multi_cell(84, 5, clean_pdf_text(value1))
-
-        self.set_xy(right_x + 3, y + 2)
-        self.set_font("Arial", "B", 9)
-        self.set_text_color(100, 100, 100)
-        self.cell(0, 4, clean_pdf_text(label2))
-
-        self.set_xy(right_x + 3, y + 8)
-        self.set_font("Arial", "", 11)
-        self.set_text_color(20, 20, 20)
-        self.multi_cell(84, 5, clean_pdf_text(value2))
-
-        self.set_y(y + row_h + 4)
-
-
-def create_pdf_report(
-    question,
-    decision_type,
-    summary,
-    best_option,
-    risk_level,
-    decision_score,
-    confidence_level,
-    decision_grade,
-    market_lens,
-    execution_lens,
-    risk_lens,
-    growth_lens,
-    why_points,
-    next_step,
-    strategic_insight,
-    option_a="",
-    option_b="",
-    option_a_score="",
-    option_b_score="",
-    option_a_future=None,
-    option_b_future=None,
-    recommended_path_future=None
-):
-    pdf = PremiumPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.add_page()
-
-    india_time = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d %b %Y, %I:%M %p IST")
-
-    pdf.set_fill_color(248, 250, 252)
-    pdf.rect(10, 10, 190, 28, style="F")
-
-    pdf.set_xy(14, 14)
-    pdf.set_font("Arial", "B", 20)
-    pdf.set_text_color(20, 30, 50)
-    pdf.cell(0, 8, "Decedo AI Decision Report", ln=True)
-
-    pdf.set_x(14)
-    pdf.set_font("Arial", "", 11)
-    pdf.set_text_color(90, 100, 120)
-    pdf.cell(0, 7, "Decision Intelligence Analysis", ln=True)
-
-    pdf.set_x(14)
-    pdf.cell(0, 7, f"Generated on: {india_time}", ln=True)
-
-    pdf.ln(8)
-
-    pdf.section_title("Decision Overview")
-    pdf.subsection("Decision Type")
-    pdf.body_text(decision_type)
-
-    pdf.subsection("Decision Question")
-    pdf.body_text(question)
-
-    pdf.section_title("Decision Summary")
-    pdf.body_text(summary)
-
-    pdf.section_title("Decision Metrics")
-    pdf.metric_row("Best Choice", best_option, "Risk Level", risk_level)
-    pdf.metric_row("Score", decision_score, "Confidence", confidence_level)
-    pdf.metric_row("Decision Grade", decision_grade, "Decision Type", decision_type)
-    pdf.metric_row(
-        "Option A Score", option_a_score if option_a_score else "N/A",
-        "Option B Score", option_b_score if option_b_score else "N/A"
-    )
-
-    pdf.section_title("Decision Lenses")
-    pdf.subsection("Market Lens")
-    pdf.body_text(market_lens)
-
-    pdf.subsection("Execution Lens")
-    pdf.body_text(execution_lens)
-
-    pdf.subsection("Risk Lens")
-    pdf.body_text(risk_lens)
-
-    pdf.subsection("Growth Lens")
-    pdf.body_text(growth_lens)
-
-    if why_points:
-        pdf.section_title("Why")
-        pdf.bullet_points(why_points)
-
-    pdf.section_title("First Next Step")
-    pdf.body_text(next_step)
-
-    pdf.section_title("Scenario Simulation")
-
-    if option_a_future and option_b_future:
-        pdf.subsection(f"Option A Future: {option_a if option_a else 'Option A'}")
-        pdf.body_text(f"3 Months: {option_a_future.get('3_months', 'Not available')}")
-        pdf.body_text(f"1 Year: {option_a_future.get('1_year', 'Not available')}")
-        pdf.body_text(f"5 Years: {option_a_future.get('5_years', 'Not available')}")
-
-        pdf.divider()
-
-        pdf.subsection(f"Option B Future: {option_b if option_b else 'Option B'}")
-        pdf.body_text(f"3 Months: {option_b_future.get('3_months', 'Not available')}")
-        pdf.body_text(f"1 Year: {option_b_future.get('1_year', 'Not available')}")
-        pdf.body_text(f"5 Years: {option_b_future.get('5_years', 'Not available')}")
-
-    elif recommended_path_future:
-        pdf.subsection("Recommended Path Future")
-        pdf.body_text(f"3 Months: {recommended_path_future.get('3_months', 'Not available')}")
-        pdf.body_text(f"1 Year: {recommended_path_future.get('1_year', 'Not available')}")
-        pdf.body_text(f"5 Years: {recommended_path_future.get('5_years', 'Not available')}")
-
-    pdf.section_title("Strategic Insight")
-    pdf.body_text(strategic_insight)
-
-    return pdf.output(dest="S").encode("latin-1")
-
-
-# ===============================
-# LOGIN / SIGNUP SCREEN
-# ===============================
-if not st.session_state.authenticated:
-    st.title("🧠 Decedo")
-    st.subheader("AI Decision Intelligence Platform")
-    st.caption("Create an account or log in to continue.")
-    st.divider()
-
+        return False, str(e)
+
+if st.session_state.authenticated:
+    st.switch_page("pages/1_Profile.py")
+
+st.markdown("""
+<div class="hero">
+    <div style="font-size:38px;font-weight:800;">🧠 Decedo</div>
+    <div style="font-size:20px;font-weight:600;margin-top:6px;">
+        AI Operating System for Decisions
+    </div>
+    <div style="font-size:15px;opacity:0.9;margin-top:10px;max-width:760px;">
+        Structured reasoning, scenario simulation, strategic insight, and premium downloadable reports.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+left, right = st.columns([1.15, 0.85], gap="large")
+
+with left:
+    st.markdown("""
+    <div class="auth-card">
+        <h2 style="margin-top:0;">Why Decedo feels premium</h2>
+        <p>• Decision intelligence dashboard</p>
+        <p>• AI debate mode</p>
+        <p>• Scenario simulation</p>
+        <p>• Strategic insights</p>
+        <p>• Premium PDF reports</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with right:
+    st.markdown('<div class="auth-card">', unsafe_allow_html=True)
     tab1, tab2 = st.tabs(["Login", "Create Account"])
 
     with tab1:
-        st.markdown("### Login")
+        st.markdown("### Welcome back")
         login_email = st.text_input("Email", key="login_email")
         login_password = st.text_input("Password", type="password", key="login_password")
 
@@ -584,14 +119,13 @@ if not st.session_state.authenticated:
                 st.session_state.authenticated = True
                 st.session_state.user_email = result.user.email
                 st.session_state.user_id = result.user.id
-                ensure_user_setup(result.user.id)
                 st.success("Login successful.")
-                st.rerun()
+                st.switch_page("pages/1_Profile.py")
             else:
                 st.error("Invalid email or password.")
 
     with tab2:
-        st.markdown("### Create Account")
+        st.markdown("### Create your account")
         signup_email = st.text_input("Email", key="signup_email")
         signup_password = st.text_input("Password", type="password", key="signup_password")
         signup_confirm = st.text_input("Confirm Password", type="password", key="signup_confirm")
@@ -602,534 +136,8 @@ if not st.session_state.authenticated:
             else:
                 ok, result = signup_user(signup_email, signup_password)
                 if ok:
-                    st.success("Account created. Now go to Login and sign in.")
+                    st.success("Account created. Please log in.")
                 else:
                     st.error(str(result))
 
-    st.stop()
-
-# ===============================
-# USER PLAN / USAGE
-# ===============================
-current_plan, current_status = get_user_plan(st.session_state.user_id)
-current_usage = reset_usage_if_new_day(st.session_state.user_id)
-used_today = current_usage.get("reports_today", 0)
-plan_limit = get_plan_limit(current_plan)
-can_generate, _, _, _ = user_can_generate_report(st.session_state.user_id)
-
-# ===============================
-# SIDEBAR INPUT PANEL
-# ===============================
-with st.sidebar:
-    st.title("🧠 Decedo")
-    st.caption(f"Logged in as: {st.session_state.user_email}")
-    st.divider()
-
-    st.markdown(f"""
-    <div class="sidebar-card">
-        <div class="plan-badge">Your Plan: {current_plan.title()}</div>
-        <div style="font-size:14px; color:#334155; font-weight:600;">
-            Usage Today:
-        </div>
-        <div style="font-size:22px; font-weight:800; color:#0f172a; margin-top:4px;">
-            {used_today} / {"Unlimited" if plan_limit is None else plan_limit}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if plan_limit is not None:
-        progress_value = min(used_today / plan_limit, 1.0) if plan_limit > 0 else 0
-        st.progress(progress_value)
-
-    if current_plan == "free":
-        st.markdown("""
-        <div class="premium-note">
-            Free plan active • Upgrade to Pro for 50 decisions/day
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.divider()
-
-    if st.button("Logout", use_container_width=True):
-        logout_user()
-        st.session_state.authenticated = False
-        st.session_state.user_email = None
-        st.session_state.user_id = None
-        st.rerun()
-
-    st.divider()
-
-    decision_type = st.selectbox(
-        "Decision Type",
-        ["Career", "Business", "Investment", "Life"]
-    )
-
-    option_a = st.text_input(
-        "Option A (optional)",
-        placeholder="Example: Learn coding first"
-    )
-
-    option_b = st.text_input(
-        "Option B (optional)",
-        placeholder="Example: Learn marketing first"
-    )
-
-    question = st.text_area(
-        "Decision Question",
-        placeholder="Example: Should I start a startup or take a job?"
-    )
-
-    analyze = st.button("Analyze Decision", type="primary", use_container_width=True)
-
-    st.divider()
-    st.caption("Structured reasoning • Decision lenses • AI debate • Scenario simulation")
-
-# ===============================
-# MAIN HEADER
-# ===============================
-st.markdown("""
-<div class="hero-card">
-    <div style="font-size:34px; font-weight:800; margin-bottom:4px;">🧠 Decedo</div>
-    <div style="font-size:18px; font-weight:600; opacity:0.95;">AI Operating System for Decisions</div>
-    <div style="font-size:14px; margin-top:8px; opacity:0.88;">
-        Make better decisions with structured AI reasoning, confidence scoring, scenario simulation, and strategic insights.
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# ===============================
-# PLAN LIMIT CHECK
-# ===============================
-if not can_generate:
-    st.error("⚠ Daily limit reached for your current plan.")
-    st.markdown("""
-    <div class="section-card">
-        <h3 style="margin-top:0;">Upgrade Options</h3>
-        <p><b>Free:</b> 3 decisions/day</p>
-        <p><b>Pro:</b> 50 decisions/day — <s>₹799</s> <b>₹599/month</b></p>
-        <p><b>Premium:</b> Unlimited — <s>₹1999</s> <b>₹1499/month</b></p>
-    </div>
-    """, unsafe_allow_html=True)
-
-# ===============================
-# ANALYZE BUTTON LOGIC
-# ===============================
-if analyze:
-    if not can_generate:
-        st.stop()
-
-    if question.strip():
-        if option_a.strip() and option_b.strip():
-            analysis_prompt = f"""
-You are Decedo, an AI decision intelligence assistant.
-
-Analyze this decision as a structured comparison.
-
-Decision Type:
-{decision_type}
-
-User question:
-{question}
-
-Option A:
-{option_a}
-
-Option B:
-{option_b}
-
-Respond only in valid JSON.
-Do not write markdown.
-Do not add explanation outside JSON.
-
-Use this exact JSON structure:
-{{
-  "comparison_summary": "1 short sentence",
-  "ai_1_for_option_a": "1 short paragraph supporting Option A",
-  "ai_2_for_option_b": "1 short paragraph supporting Option B",
-  "option_a_score": "score out of 10",
-  "option_b_score": "score out of 10",
-  "better_option": "stronger option in 1 short sentence",
-  "market_lens": "1 short sentence",
-  "execution_lens": "1 short sentence",
-  "risk_lens": "1 short sentence",
-  "growth_lens": "1 short sentence",
-  "confidence_level": "percentage like 78%",
-  "risk_comparison": "Low or Medium or High",
-  "why": ["point 1", "point 2"],
-  "first_next_step": "1 practical next action"
-}}
-
-Rules:
-- Keep the full response concise
-- Be direct
-- Use realistic reasoning
-"""
-        else:
-            analysis_prompt = f"""
-You are Decedo, an AI decision intelligence assistant.
-
-Analyze the user's decision question clearly and briefly.
-
-Decision Type:
-{decision_type}
-
-User question:
-{question}
-
-Respond only in valid JSON.
-Do not write markdown.
-Do not add explanation outside JSON.
-
-Use this exact JSON structure:
-{{
-  "decision_summary": "1 short sentence",
-  "best_option": "best choice in 1 short sentence",
-  "market_lens": "1 short sentence",
-  "execution_lens": "1 short sentence",
-  "risk_lens": "1 short sentence",
-  "growth_lens": "1 short sentence",
-  "confidence_level": "percentage like 78%",
-  "risk_level": "Low or Medium or High",
-  "decision_score": "score out of 10",
-  "why": ["point 1", "point 2"],
-  "first_next_step": "1 practical next action"
-}}
-
-Rules:
-- Keep the full response concise
-- Be direct
-- Use realistic reasoning
-"""
-
-        try:
-            with st.spinner("Analyzing your decision..."):
-                analysis_response = gemini_client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=analysis_prompt,
-                )
-
-            analysis_result = analysis_response.text
-            analysis_data = parse_json_response(analysis_result)
-
-            summary = analysis_data.get("decision_summary", analysis_data.get("comparison_summary", "Not available"))
-            best_option = analysis_data.get("best_option", analysis_data.get("better_option", "Not available"))
-            risk_level = analysis_data.get("risk_level", analysis_data.get("risk_comparison", "Not available"))
-            decision_score = analysis_data.get("decision_score", analysis_data.get("option_a_score", "Not available"))
-            confidence_level = analysis_data.get("confidence_level", "Not available")
-            next_step = analysis_data.get("first_next_step", "Not available")
-            decision_grade = calculate_grade(decision_score)
-
-            market_lens = analysis_data.get("market_lens", "")
-            execution_lens = analysis_data.get("execution_lens", "")
-            risk_lens = analysis_data.get("risk_lens", "")
-            growth_lens = analysis_data.get("growth_lens", "")
-            why_points = analysis_data.get("why", [])
-
-            if option_a.strip() and option_b.strip():
-                scenario_prompt = f"""
-You are Decedo, an AI strategic simulation engine.
-
-Simulate the future consequences of both options.
-
-Decision Type:
-{decision_type}
-
-User question:
-{question}
-
-Option A:
-{option_a}
-
-Option B:
-{option_b}
-
-Existing decision summary:
-{summary}
-
-Best option:
-{best_option}
-
-Market lens:
-{market_lens}
-
-Execution lens:
-{execution_lens}
-
-Risk lens:
-{risk_lens}
-
-Growth lens:
-{growth_lens}
-
-Respond only in valid JSON.
-Do not write markdown.
-Do not add explanation outside JSON.
-
-Use this exact JSON structure:
-{{
-  "option_a_future": {{
-    "3_months": "1 short sentence",
-    "1_year": "1 short sentence",
-    "5_years": "1 short sentence"
-  }},
-  "option_b_future": {{
-    "3_months": "1 short sentence",
-    "1_year": "1 short sentence",
-    "5_years": "1 short sentence"
-  }},
-  "strategic_insight": "1 powerful strategic insight in 1-2 short sentences"
-}}
-
-Rules:
-- Be realistic
-- Be specific
-- Keep each point concise
-"""
-            else:
-                scenario_prompt = f"""
-You are Decedo, an AI strategic simulation engine.
-
-Simulate the future consequences of the user's likely path.
-
-Decision Type:
-{decision_type}
-
-User question:
-{question}
-
-Existing decision summary:
-{summary}
-
-Best option:
-{best_option}
-
-Market lens:
-{market_lens}
-
-Execution lens:
-{execution_lens}
-
-Risk lens:
-{risk_lens}
-
-Growth lens:
-{growth_lens}
-
-Respond only in valid JSON.
-Do not write markdown.
-Do not add explanation outside JSON.
-
-Use this exact JSON structure:
-{{
-  "recommended_path_future": {{
-    "3_months": "1 short sentence",
-    "1_year": "1 short sentence",
-    "5_years": "1 short sentence"
-  }},
-  "strategic_insight": "1 powerful strategic insight in 1-2 short sentences"
-}}
-
-Rules:
-- Be realistic
-- Be specific
-- Keep each point concise
-"""
-
-            with st.spinner("Simulating future outcomes..."):
-                scenario_response = gemini_client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=scenario_prompt,
-                )
-
-            scenario_result = scenario_response.text
-            scenario_data = parse_json_response(scenario_result)
-
-            option_a_future = scenario_data.get("option_a_future", {})
-            option_b_future = scenario_data.get("option_b_future", {})
-            recommended_path_future = scenario_data.get("recommended_path_future", {})
-            strategic_insight = scenario_data.get("strategic_insight", "Not available")
-
-            history_item = {
-                "question": question,
-                "answer": {
-                    "analysis": analysis_data,
-                    "scenario": scenario_data
-                }
-            }
-            st.session_state.history.append(history_item)
-
-            saved = save_report_to_supabase(
-                user_id=st.session_state.user_id,
-                decision_type=decision_type,
-                question=question,
-                option_a=option_a,
-                option_b=option_b,
-                analysis_data=analysis_data,
-                scenario_data=scenario_data
-            )
-
-            if saved:
-                st.success("Report saved successfully to database.")
-
-            st.markdown("## 📊 Decision Dashboard")
-
-            st.markdown("### Decision Summary")
-            st.info(summary)
-
-            st.markdown("### Decision Lenses")
-            lens_col1, lens_col2 = st.columns(2)
-
-            with lens_col1:
-                st.markdown("#### Market Lens")
-                st.write(market_lens if market_lens else "Not available")
-
-                st.markdown("#### Execution Lens")
-                st.write(execution_lens if execution_lens else "Not available")
-
-            with lens_col2:
-                st.markdown("#### Risk Lens")
-                st.write(risk_lens if risk_lens else "Not available")
-
-                st.markdown("#### Growth Lens")
-                st.write(growth_lens if growth_lens else "Not available")
-
-            st.markdown("### Decision Metrics")
-            col1, col2, col3, col4, col5 = st.columns(5)
-
-            col1.metric("Best Choice", best_option)
-            col2.metric("Risk Level", risk_level)
-            col3.metric("Score", decision_score)
-            col4.metric("Confidence", confidence_level)
-            col5.metric("Decision Grade", decision_grade)
-
-            if confidence_level and confidence_level != "Not available":
-                try:
-                    confidence_number = int(str(confidence_level).replace("%", "").strip())
-                    st.markdown("#### Confidence Meter")
-                    st.progress(confidence_number)
-                except Exception:
-                    pass
-
-            if "option_a_score" in analysis_data or "option_b_score" in analysis_data:
-                st.markdown("### Comparison Scores")
-                c1, c2 = st.columns(2)
-                c1.metric("Option A Score", analysis_data.get("option_a_score", "N/A"))
-                c2.metric("Option B Score", analysis_data.get("option_b_score", "N/A"))
-
-            if "ai_1_for_option_a" in analysis_data and "ai_2_for_option_b" in analysis_data:
-                st.markdown("### 🥊 AI Debate Mode")
-                d1, d2 = st.columns(2)
-
-                with d1:
-                    st.markdown("#### AI 1 - Option A")
-                    st.write(analysis_data.get("ai_1_for_option_a", ""))
-
-                with d2:
-                    st.markdown("#### AI 2 - Option B")
-                    st.write(analysis_data.get("ai_2_for_option_b", ""))
-
-            if why_points:
-                st.markdown("### Why")
-                for point in why_points:
-                    st.write(f"• {point}")
-
-            st.markdown("### First Next Step")
-            st.success(next_step)
-
-            st.divider()
-            st.markdown("## 🔮 Scenario Simulation")
-
-            if option_a_future and option_b_future:
-                s1, s2 = st.columns(2)
-
-                with s1:
-                    st.markdown("### Option A Future")
-                    st.markdown(f"**{option_a if option_a else 'Option A'}**")
-                    st.markdown("**3 Months**")
-                    st.write(option_a_future.get("3_months", "Not available"))
-                    st.markdown("**1 Year**")
-                    st.write(option_a_future.get("1_year", "Not available"))
-                    st.markdown("**5 Years**")
-                    st.write(option_a_future.get("5_years", "Not available"))
-
-                with s2:
-                    st.markdown("### Option B Future")
-                    st.markdown(f"**{option_b if option_b else 'Option B'}**")
-                    st.markdown("**3 Months**")
-                    st.write(option_b_future.get("3_months", "Not available"))
-                    st.markdown("**1 Year**")
-                    st.write(option_b_future.get("1_year", "Not available"))
-                    st.markdown("**5 Years**")
-                    st.write(option_b_future.get("5_years", "Not available"))
-
-            elif recommended_path_future:
-                st.markdown("### Recommended Path Future")
-                st.markdown("**3 Months**")
-                st.write(recommended_path_future.get("3_months", "Not available"))
-                st.markdown("**1 Year**")
-                st.write(recommended_path_future.get("1_year", "Not available"))
-                st.markdown("**5 Years**")
-                st.write(recommended_path_future.get("5_years", "Not available"))
-
-            st.divider()
-            st.markdown("## 🎯 Strategic Insight")
-            st.success(strategic_insight)
-
-            st.divider()
-            st.markdown("## 📄 Download Report")
-
-            pdf_bytes = create_pdf_report(
-                question=question,
-                decision_type=decision_type,
-                summary=summary,
-                best_option=best_option,
-                risk_level=risk_level,
-                decision_score=str(decision_score),
-                confidence_level=str(confidence_level),
-                decision_grade=decision_grade,
-                market_lens=market_lens,
-                execution_lens=execution_lens,
-                risk_lens=risk_lens,
-                growth_lens=growth_lens,
-                why_points=why_points,
-                next_step=next_step,
-                strategic_insight=strategic_insight,
-                option_a=option_a,
-                option_b=option_b,
-                option_a_score=analysis_data.get("option_a_score", ""),
-                option_b_score=analysis_data.get("option_b_score", ""),
-                option_a_future=option_a_future,
-                option_b_future=option_b_future,
-                recommended_path_future=recommended_path_future
-            )
-
-            safe_filename = question[:40].replace(" ", "_").replace("/", "_").replace("\\", "_")
-            if not safe_filename:
-                safe_filename = "decedo_decision_report"
-
-            st.download_button(
-                label="Download Decision Report (PDF)",
-                data=pdf_bytes,
-                file_name=f"{safe_filename}.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
-
-        except Exception as e:
-            if "RESOURCE_EXHAUSTED" in str(e) or "429" in str(e):
-                st.warning("⚠️ AI request limit reached. Please wait a minute and try again.")
-            else:
-                st.error(f"Real error: {e}")
-    else:
-        st.warning("Please enter a decision question first.")
-
-# ===============================
-# RECENT DECISIONS
-# ===============================
-if st.session_state.history:
-    st.divider()
-    st.markdown("## 📜 Recent Decisions")
-
-    for item in reversed(st.session_state.history[-5:]):
-        with st.expander(item["question"]):
-            st.write(item["answer"])
+    st.markdown('</div>', unsafe_allow_html=True)
