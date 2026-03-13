@@ -120,7 +120,7 @@ with right:
                 st.session_state.user_email = result.user.email
                 st.session_state.user_id = result.user.id
                 st.success("Login successful.")
-                st.return()
+                st.rerun()
             else:
                 st.error("Invalid email or password.")
 
@@ -141,4 +141,5 @@ with right:
                     st.error(str(result))
 
     st.markdown('</div>', unsafe_allow_html=True)
+
 
