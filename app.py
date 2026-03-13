@@ -40,6 +40,10 @@ st.markdown("""
         padding: 28px;
         box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
         text-align: center;
+        min-height: 220px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     .stButton>button {
         border-radius: 14px;
@@ -109,24 +113,22 @@ if st.session_state.authenticated:
     with col1:
         st.markdown("""
         <div class="nav-card">
-            <div style="font-size:28px;">👤</div>
+            <div style="font-size:30px;">👤</div>
             <h3>Profile</h3>
             <p>Manage username, plan, and account overview.</p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Open Profile", use_container_width=True, type="primary"):
-            st.switch_page("pages/1_Profile.py")
+        st.page_link("pages/1_Profile.py", label="Open Profile", icon="👤")
 
     with col2:
         st.markdown("""
         <div class="nav-card">
-            <div style="font-size:28px;">🔬</div>
+            <div style="font-size:30px;">🔬</div>
             <h3>Decision Lab</h3>
             <p>Run decision analysis, scenario simulation, and download premium reports.</p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Open Decision Lab", use_container_width=True):
-            st.switch_page("pages/2_Decision_Lab.py")
+        st.page_link("pages/2_Decision_Lab.py", label="Open Decision Lab", icon="🔬")
 
     st.stop()
 
