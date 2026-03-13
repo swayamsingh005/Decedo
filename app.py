@@ -65,11 +65,17 @@ st.markdown("""
 # API SETUP
 # ===============================
 GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
-client = genai.Client(api_key=GEMINI_API_KEY)
+gemini_client = genai.Client(api_key=GEMINI_API_KEY)
 
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_ANON_KEY = st.secrets["SUPABASE_ANON_KEY"]
+SUPABASE_SERVICE_ROLE_KEY = st.secrets["SUPABASE_SERVICE_ROLE_KEY"]
+
+# Public client for auth
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+# Admin/server client for backend database writes
+admin_supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 # ===============================
 # SESSION STATE
@@ -123,7 +129,7 @@ def clean_pdf_text(text):
 def calculate_grade(score):
     try:
         score = float(str(score).replace("/10", "").strip())
-    except:
+    except Exception:
         return "N/A"
 
     if score >= 9:
@@ -163,8 +169,53 @@ def login_user(email: str, password: str):
 def logout_user():
     try:
         supabase.auth.sign_out()
-    except:
+    except Exception:
         pass
+
+
+def ensure_user_setup(user_id: str):
+    """Create default free-plan rows in subscriptions and usage_tracking."""
+    india_now = datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
+
+    try:
+        admin_supabase.table("subscriptions").upsert({
+            "user_id": user_id,
+            "plan": "free",
+            "status": "active",
+            "created_at": india_now
+        }).execute()
+    except Exception as e:
+        st.warning(f"Subscription setup warning: {e}")
+
+    try:
+        admin_supabase.table("usage_tracking").upsert({
+            "user_id": user_id,
+            "reports_today": 0,
+            "last_reset": india_now
+        }).execute()
+    except Exception as e:
+        st.warning(f"Usage setup warning: {e}")
+
+
+def increment_usage(user_id: str):
+    """Increase reports_today by 1 for the logged-in user."""
+    try:
+        result = admin_supabase.table("usage_tracking").select("*").eq("user_id", user_id).execute()
+
+        if result.data:
+            current_reports = result.data[0].get("reports_today", 0)
+            admin_supabase.table("usage_tracking").update({
+                "reports_today": current_reports + 1,
+                "last_reset": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
+            }).eq("user_id", user_id).execute()
+        else:
+            admin_supabase.table("usage_tracking").insert({
+                "user_id": user_id,
+                "reports_today": 1,
+                "last_reset": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
+            }).execute()
+    except Exception as e:
+        st.warning(f"Usage tracking warning: {e}")
 
 
 def save_report_to_supabase(
@@ -176,22 +227,25 @@ def save_report_to_supabase(
     analysis_data: dict,
     scenario_data: dict
 ):
-    try:
-        report_payload = {
-            "user_id": user_id,
-            "decision_type": decision_type,
-            "question": question,
-            "option_a": option_a if option_a else None,
-            "option_b": option_b if option_b else None,
-            "analysis": {
-                "analysis": analysis_data,
-                "scenario": scenario_data
-            }
+    report_payload = {
+        "user_id": user_id,
+        "decision_type": decision_type,
+        "question": question,
+        "option_a": option_a if option_a else None,
+        "option_b": option_b if option_b else None,
+        "analysis": {
+            "analysis": analysis_data,
+            "scenario": scenario_data
         }
-        supabase.table("reports").insert(report_payload).execute()
+    }
+
+    try:
+        admin_supabase.table("reports").insert(report_payload).execute()
+        increment_usage(user_id)
         return True
     except Exception as e:
-        st.warning(f"Report save warning: {e}")
+        st.error("Supabase report save failed.")
+        st.code(str(e))
         return False
 
 
@@ -412,6 +466,7 @@ if not st.session_state.authenticated:
                 st.session_state.authenticated = True
                 st.session_state.user_email = result.user.email
                 st.session_state.user_id = result.user.id
+                ensure_user_setup(result.user.id)
                 st.success("Login successful.")
                 st.rerun()
             else:
@@ -429,7 +484,7 @@ if not st.session_state.authenticated:
             else:
                 ok, result = signup_user(signup_email, signup_password)
                 if ok:
-                    st.success("Account created. Check your email if confirmation is enabled, then log in.")
+                    st.success("Account created. Now go to Login and sign in.")
                 else:
                     st.error(str(result))
 
@@ -574,7 +629,7 @@ Rules:
 
         try:
             with st.spinner("Analyzing your decision..."):
-                analysis_response = client.models.generate_content(
+                analysis_response = gemini_client.models.generate_content(
                     model="gemini-2.5-flash",
                     contents=analysis_prompt,
                 )
@@ -707,7 +762,7 @@ Rules:
 """
 
             with st.spinner("Simulating future outcomes..."):
-                scenario_response = client.models.generate_content(
+                scenario_response = gemini_client.models.generate_content(
                     model="gemini-2.5-flash",
                     contents=scenario_prompt,
                 )
@@ -720,7 +775,6 @@ Rules:
             recommended_path_future = scenario_data.get("recommended_path_future", {})
             strategic_insight = scenario_data.get("strategic_insight", "Not available")
 
-            # save to session and Supabase
             history_item = {
                 "question": question,
                 "answer": {
@@ -730,7 +784,7 @@ Rules:
             }
             st.session_state.history.append(history_item)
 
-            save_report_to_supabase(
+            saved = save_report_to_supabase(
                 user_id=st.session_state.user_id,
                 decision_type=decision_type,
                 question=question,
@@ -740,7 +794,9 @@ Rules:
                 scenario_data=scenario_data
             )
 
-            # RESULT UI
+            if saved:
+                st.success("Report saved successfully to database.")
+
             st.markdown("## 📊 Decision Dashboard")
 
             st.markdown("### Decision Summary")
@@ -777,7 +833,7 @@ Rules:
                     confidence_number = int(str(confidence_level).replace("%", "").strip())
                     st.markdown("#### Confidence Meter")
                     st.progress(confidence_number)
-                except:
+                except Exception:
                     pass
 
             if "option_a_score" in analysis_data or "option_b_score" in analysis_data:
