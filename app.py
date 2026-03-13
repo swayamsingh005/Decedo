@@ -18,34 +18,35 @@ st.set_page_config(
 st.markdown("""
 <style>
     .main {
-        background-color: #f8fafc;
+        background: linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%);
     }
 
     section[data-testid="stSidebar"] {
-        background-color: #ffffff;
+        background: #ffffff;
         border-right: 1px solid #e5e7eb;
-    }
-
-    div[data-testid="stMetric"] {
-        background-color: white;
-        border: 1px solid #e5e7eb;
-        padding: 15px;
-        border-radius: 16px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
 
     .block-container {
         padding-top: 2rem;
         padding-bottom: 2rem;
+        max-width: 1200px;
     }
 
     h1, h2, h3 {
         color: #111827;
     }
 
+    div[data-testid="stMetric"] {
+        background: white;
+        border: 1px solid #e5e7eb;
+        padding: 14px;
+        border-radius: 18px;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+    }
+
     .stButton>button {
-        border-radius: 12px;
-        font-weight: 600;
+        border-radius: 14px;
+        font-weight: 700;
         height: 3em;
     }
 
@@ -56,7 +57,53 @@ st.markdown("""
     }
 
     .stAlert {
+        border-radius: 16px;
+    }
+
+    .hero-card {
+        background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+        padding: 24px;
+        border-radius: 24px;
+        color: white;
+        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+        margin-bottom: 20px;
+    }
+
+    .section-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        padding: 18px;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+        margin-bottom: 14px;
+    }
+
+    .plan-badge {
+        display: inline-block;
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+        background: #dbeafe;
+        color: #1d4ed8;
+        margin-bottom: 8px;
+    }
+
+    .sidebar-card {
+        background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+        border: 1px solid #dbeafe;
+        border-radius: 18px;
+        padding: 14px;
+        margin-bottom: 14px;
+    }
+
+    .premium-note {
+        background: #fff7ed;
+        border: 1px solid #fdba74;
+        color: #9a3412;
         border-radius: 14px;
+        padding: 12px 14px;
+        font-weight: 600;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -71,10 +118,7 @@ SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_ANON_KEY = st.secrets["SUPABASE_ANON_KEY"]
 SUPABASE_SERVICE_ROLE_KEY = st.secrets["SUPABASE_SERVICE_ROLE_KEY"]
 
-# Public client for auth
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
-
-# Admin/server client for backend database writes
 admin_supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 # ===============================
@@ -174,7 +218,6 @@ def logout_user():
 
 
 def ensure_user_setup(user_id: str):
-    """Create default free-plan rows in subscriptions and usage_tracking."""
     india_now = datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
 
     try:
@@ -197,25 +240,101 @@ def ensure_user_setup(user_id: str):
         st.warning(f"Usage setup warning: {e}")
 
 
-def increment_usage(user_id: str):
-    """Increase reports_today by 1 for the logged-in user."""
-    try:
-        result = admin_supabase.table("usage_tracking").select("*").eq("user_id", user_id).execute()
+def get_plan_limit(plan: str):
+    plan = (plan or "free").lower()
+    if plan == "free":
+        return 3
+    if plan == "pro":
+        return 50
+    if plan == "premium":
+        return None
+    return 3
 
+
+def get_user_plan(user_id: str):
+    try:
+        result = admin_supabase.table("subscriptions").select("*").eq("user_id", user_id).limit(1).execute()
         if result.data:
-            current_reports = result.data[0].get("reports_today", 0)
-            admin_supabase.table("usage_tracking").update({
-                "reports_today": current_reports + 1,
-                "last_reset": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
-            }).eq("user_id", user_id).execute()
-        else:
-            admin_supabase.table("usage_tracking").insert({
+            return result.data[0].get("plan", "free"), result.data[0].get("status", "active")
+    except Exception as e:
+        st.warning(f"Plan fetch warning: {e}")
+    return "free", "active"
+
+
+def get_usage_info(user_id: str):
+    try:
+        result = admin_supabase.table("usage_tracking").select("*").eq("user_id", user_id).limit(1).execute()
+        if result.data:
+            return result.data[0]
+    except Exception as e:
+        st.warning(f"Usage fetch warning: {e}")
+    return None
+
+
+def reset_usage_if_new_day(user_id: str):
+    usage = get_usage_info(user_id)
+    india_now = datetime.now(ZoneInfo("Asia/Kolkata"))
+    today = india_now.date()
+
+    if not usage:
+        try:
+            admin_supabase.table("usage_tracking").upsert({
                 "user_id": user_id,
-                "reports_today": 1,
-                "last_reset": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
+                "reports_today": 0,
+                "last_reset": india_now.isoformat()
             }).execute()
+        except Exception as e:
+            st.warning(f"Usage reset setup warning: {e}")
+        return {"user_id": user_id, "reports_today": 0, "last_reset": india_now.isoformat()}
+
+    last_reset_raw = usage.get("last_reset")
+    try:
+        last_reset_date = datetime.fromisoformat(last_reset_raw.replace("Z", "+00:00")).astimezone(
+            ZoneInfo("Asia/Kolkata")
+        ).date()
+    except Exception:
+        last_reset_date = today
+
+    if last_reset_date != today:
+        try:
+            admin_supabase.table("usage_tracking").update({
+                "reports_today": 0,
+                "last_reset": india_now.isoformat()
+            }).eq("user_id", user_id).execute()
+            usage["reports_today"] = 0
+            usage["last_reset"] = india_now.isoformat()
+        except Exception as e:
+            st.warning(f"Daily reset warning: {e}")
+
+    return usage
+
+
+def increment_usage(user_id: str):
+    try:
+        usage = reset_usage_if_new_day(user_id)
+        current_reports = usage.get("reports_today", 0)
+
+        admin_supabase.table("usage_tracking").update({
+            "reports_today": current_reports + 1,
+            "last_reset": datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
+        }).eq("user_id", user_id).execute()
     except Exception as e:
         st.warning(f"Usage tracking warning: {e}")
+
+
+def user_can_generate_report(user_id: str):
+    plan, status = get_user_plan(user_id)
+    usage = reset_usage_if_new_day(user_id)
+    used_today = usage.get("reports_today", 0)
+    plan_limit = get_plan_limit(plan)
+
+    if status != "active":
+        return False, plan, used_today, plan_limit
+
+    if plan_limit is None:
+        return True, plan, used_today, plan_limit
+
+    return used_today < plan_limit, plan, used_today, plan_limit
 
 
 def save_report_to_supabase(
@@ -397,7 +516,6 @@ def create_pdf_report(
     )
 
     pdf.section_title("Decision Lenses")
-
     pdf.subsection("Market Lens")
     pdf.body_text(market_lens)
 
@@ -491,11 +609,45 @@ if not st.session_state.authenticated:
     st.stop()
 
 # ===============================
+# USER PLAN / USAGE
+# ===============================
+current_plan, current_status = get_user_plan(st.session_state.user_id)
+current_usage = reset_usage_if_new_day(st.session_state.user_id)
+used_today = current_usage.get("reports_today", 0)
+plan_limit = get_plan_limit(current_plan)
+can_generate, _, _, _ = user_can_generate_report(st.session_state.user_id)
+
+# ===============================
 # SIDEBAR INPUT PANEL
 # ===============================
 with st.sidebar:
     st.title("🧠 Decedo")
     st.caption(f"Logged in as: {st.session_state.user_email}")
+    st.divider()
+
+    st.markdown(f"""
+    <div class="sidebar-card">
+        <div class="plan-badge">Your Plan: {current_plan.title()}</div>
+        <div style="font-size:14px; color:#334155; font-weight:600;">
+            Usage Today:
+        </div>
+        <div style="font-size:22px; font-weight:800; color:#0f172a; margin-top:4px;">
+            {used_today} / {"Unlimited" if plan_limit is None else plan_limit}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if plan_limit is not None:
+        progress_value = min(used_today / plan_limit, 1.0) if plan_limit > 0 else 0
+        st.progress(progress_value)
+
+    if current_plan == "free":
+        st.markdown("""
+        <div class="premium-note">
+            Free plan active • Upgrade to Pro for 50 decisions/day
+        </div>
+        """, unsafe_allow_html=True)
+
     st.divider()
 
     if st.button("Logout", use_container_width=True):
@@ -535,15 +687,37 @@ with st.sidebar:
 # ===============================
 # MAIN HEADER
 # ===============================
-st.title("🧠 Decedo")
-st.subheader("AI Operating System for Decisions")
-st.caption("Make better decisions with structured AI reasoning, confidence scoring, and strategic analysis.")
-st.divider()
+st.markdown("""
+<div class="hero-card">
+    <div style="font-size:34px; font-weight:800; margin-bottom:4px;">🧠 Decedo</div>
+    <div style="font-size:18px; font-weight:600; opacity:0.95;">AI Operating System for Decisions</div>
+    <div style="font-size:14px; margin-top:8px; opacity:0.88;">
+        Make better decisions with structured AI reasoning, confidence scoring, scenario simulation, and strategic insights.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ===============================
+# PLAN LIMIT CHECK
+# ===============================
+if not can_generate:
+    st.error("⚠ Daily limit reached for your current plan.")
+    st.markdown("""
+    <div class="section-card">
+        <h3 style="margin-top:0;">Upgrade Options</h3>
+        <p><b>Free:</b> 3 decisions/day</p>
+        <p><b>Pro:</b> 50 decisions/day — <s>₹799</s> <b>₹599/month</b></p>
+        <p><b>Premium:</b> Unlimited — <s>₹1999</s> <b>₹1499/month</b></p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ===============================
 # ANALYZE BUTTON LOGIC
 # ===============================
 if analyze:
+    if not can_generate:
+        st.stop()
+
     if question.strip():
         if option_a.strip() and option_b.strip():
             analysis_prompt = f"""
