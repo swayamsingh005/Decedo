@@ -202,7 +202,6 @@ def get_subscription():
             return result.data[0]
     except Exception:
         pass
-
     return {"plan": "free", "status": "active"}
 
 def get_plan_limit(plan: str):
@@ -219,8 +218,9 @@ def get_or_create_usage():
     now = datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
 
     try:
-        result = admin_supabase.table("usage_tracking").select("*").eq("user_id", st.session_state.user_id).limit(1).execute()
-        if result.data:
+        result = admin_supabase.table("usage_tracking").select("*").eq("user_id", st.session_state.user_id).execute()
+
+        if result.data and len(result.data) > 0:
             return result.data[0]
 
         new_row = {
@@ -230,6 +230,7 @@ def get_or_create_usage():
         }
         admin_supabase.table("usage_tracking").insert(new_row).execute()
         return new_row
+
     except Exception:
         return {
             "user_id": st.session_state.user_id,
@@ -257,6 +258,7 @@ def reset_usage_if_new_day():
             }).eq("user_id", st.session_state.user_id).execute()
         except Exception:
             pass
+
         usage["reports_today"] = 0
         usage["last_reset"] = now.isoformat()
 
@@ -282,7 +284,7 @@ def user_can_generate():
     return used < limit, plan, used, limit
 
 def increment_usage():
-    usage = get_usage()
+    usage = get_or_create_usage()
     used = int(usage.get("reports_today", 0) or 0)
     now = datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
 
@@ -542,6 +544,7 @@ def render_home():
     plan = sub.get("plan", "free")
     limit = get_plan_limit(plan)
     used_today = int(usage.get("reports_today", 0) or 0)
+    usage_text = f"{used_today}/{limit}" if limit is not None else f"{used_today}/Unlimited"
 
     st.markdown("""
     <div class="hero">
@@ -556,8 +559,6 @@ def render_home():
     """, unsafe_allow_html=True)
 
     st.success(f"Logged in as {st.session_state.user_email}")
-
-    usage_text = f"{used_today}/{limit}" if limit is not None else f"{used_today}/Unlimited"
     st.info(f"Plan: {plan.title()} • Usage Today: {usage_text}")
 
     col1, col2 = st.columns(2, gap="large")
@@ -674,7 +675,6 @@ def render_lab():
     if profile and profile.get("username"):
         username = profile["username"]
 
-    usage = get_usage()
     can_generate, plan, used_today, limit = user_can_generate()
     usage_text = f"{used_today}/{limit}" if limit is not None else f"{used_today}/Unlimited"
 
@@ -910,7 +910,6 @@ Do not add explanation outside JSON.
 
             save_report(question, decision_type, option_a, option_b, analysis_data, scenario_data)
 
-            # Refresh usage after saving
             refreshed_usage = get_usage()
             refreshed_used_today = int(refreshed_usage.get("reports_today", 0) or 0)
             refreshed_usage_text = f"{refreshed_used_today}/{limit}" if limit is not None else f"{refreshed_used_today}/Unlimited"
@@ -925,9 +924,6 @@ Do not add explanation outside JSON.
 
             st.success(f"Report saved successfully. Usage Today: {refreshed_usage_text}")
 
-            # =====================================
-            # DASHBOARD
-            # =====================================
             st.markdown("## 📊 Decision Dashboard")
             st.info(summary)
 
@@ -949,17 +945,11 @@ Do not add explanation outside JSON.
             m4.metric("Confidence", confidence_level)
             m5.metric("Grade", decision_grade)
 
-            # =====================================
-            # CONFIDENCE METER
-            # =====================================
             st.markdown("### Confidence Meter")
             confidence_value = confidence_to_int(confidence_level)
             st.progress(confidence_value)
             st.caption(f"AI confidence: {confidence_value}%")
 
-            # =====================================
-            # AI 1 VS AI 2
-            # =====================================
             if ai_1_argument or ai_2_argument:
                 st.markdown("## ⚔️ AI 1 vs AI 2")
                 d1, d2 = st.columns(2)
@@ -980,17 +970,11 @@ Do not add explanation outside JSON.
                     st.write(ai_2_argument if ai_2_argument else "Not available")
                     st.markdown('</div>', unsafe_allow_html=True)
 
-            # =====================================
-            # FINAL OPINION
-            # =====================================
             st.markdown("## 🧠 Final Opinion")
             st.markdown('<div class="judge-box">', unsafe_allow_html=True)
             st.write(final_opinion)
             st.markdown('</div>', unsafe_allow_html=True)
 
-            # =====================================
-            # LENSES
-            # =====================================
             st.markdown("### Decision Lenses")
             l1, l2 = st.columns(2)
             with l1:
@@ -1000,29 +984,17 @@ Do not add explanation outside JSON.
                 st.write(f"**Risk Lens:** {risk_lens}")
                 st.write(f"**Growth Lens:** {growth_lens}")
 
-            # =====================================
-            # WHY
-            # =====================================
             if why_points:
                 st.markdown("### Why")
                 for point in why_points:
                     st.write(f"- {point}")
 
-            # =====================================
-            # NEXT STEP
-            # =====================================
             st.markdown("### First Next Step")
             st.success(next_step)
 
-            # =====================================
-            # STRATEGIC INSIGHT
-            # =====================================
             st.markdown("### Strategic Insight")
             st.success(strategic_insight)
 
-            # =====================================
-            # SCENARIO SIMULATION
-            # =====================================
             if option_a_future and option_b_future:
                 st.markdown("## 🔮 Scenario Simulation")
                 s1, s2 = st.columns(2)
@@ -1047,9 +1019,6 @@ Do not add explanation outside JSON.
                 st.write(f"**1 Year:** {recommended_path_future.get('1_year', 'Not available')}")
                 st.write(f"**5 Years:** {recommended_path_future.get('5_years', 'Not available')}")
 
-            # =====================================
-            # PDF
-            # =====================================
             pdf_bytes = create_pdf_report(
                 question=question,
                 decision_type=decision_type,
