@@ -18,176 +18,209 @@ st.set_page_config(
 )
 
 # =========================================================
-# STYLES
+# GLOBAL STYLES
 # =========================================================
 st.markdown("""
 <style>
     :root {
-        --bg-1: #07101f;
-        --bg-2: #0b1730;
-        --card: rgba(255,255,255,0.96);
-        --card-border: #e5e7eb;
-        --text: #0f172a;
-        --muted: #64748b;
+        --bg-1: #040814;
+        --bg-2: #0a1020;
+        --bg-3: #101a35;
         --primary: #2563eb;
         --primary-2: #7c3aed;
+        --accent: #ec4899;
         --success: #16a34a;
         --warning: #f59e0b;
         --danger: #ef4444;
+        --text: #0f172a;
+        --muted: #64748b;
+        --card-border: rgba(255,255,255,0.08);
+        --card-shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
     }
 
     .main {
         background:
-            radial-gradient(circle at top left, rgba(37,99,235,0.08), transparent 25%),
-            radial-gradient(circle at top right, rgba(124,58,237,0.08), transparent 22%),
+            radial-gradient(circle at 12% 8%, rgba(37,99,235,0.08), transparent 22%),
+            radial-gradient(circle at 88% 10%, rgba(124,58,237,0.08), transparent 20%),
+            radial-gradient(circle at 50% 100%, rgba(236,72,153,0.04), transparent 22%),
             linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%);
     }
 
     .block-container {
-        max-width: 1200px;
-        padding-top: 2rem;
-        padding-bottom: 2.2rem;
+        max-width: 1240px;
+        padding-top: 1.7rem;
+        padding-bottom: 2.5rem;
     }
 
     .hero {
-        background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #6d28d9 100%);
-        border-radius: 30px;
-        padding: 36px 34px;
-        color: white;
-        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
-        margin-bottom: 24px;
         position: relative;
         overflow: hidden;
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 28%),
+            linear-gradient(135deg, #0b1020 0%, #10214a 48%, #6d28d9 100%);
+        border-radius: 34px;
+        padding: 38px 36px;
+        color: white;
+        box-shadow: 0 26px 70px rgba(15, 23, 42, 0.22);
+        margin-bottom: 24px;
+        border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .hero::before {
+        content: "";
+        position: absolute;
+        width: 320px;
+        height: 320px;
+        background: radial-gradient(circle, rgba(255,255,255,0.10), transparent 65%);
+        top: -80px;
+        right: -80px;
+        border-radius: 50%;
     }
 
     .hero::after {
         content: "";
         position: absolute;
-        width: 280px;
-        height: 280px;
-        background: radial-gradient(circle, rgba(255,255,255,0.10), transparent 60%);
-        top: -90px;
-        right: -70px;
+        width: 240px;
+        height: 240px;
+        background: radial-gradient(circle, rgba(59,130,246,0.22), transparent 70%);
+        bottom: -90px;
+        left: -60px;
         border-radius: 50%;
     }
 
-    .card {
-        background: rgba(255,255,255,0.97);
-        border: 1px solid #e5e7eb;
-        border-radius: 24px;
+    .glass-card {
+        background: rgba(255,255,255,0.88);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.65);
+        border-radius: 26px;
         padding: 24px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        box-shadow: var(--card-shadow);
         margin-bottom: 18px;
     }
 
-    .soft-card {
+    .solid-card {
         background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 20px;
-        padding: 20px;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-        margin-bottom: 16px;
-    }
-
-    .nav-card {
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 24px;
-        padding: 28px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-        text-align: center;
-        min-height: 210px;
-    }
-
-    .premium-badge, .pro-badge, .free-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px 12px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: 0.02em;
-        margin-bottom: 12px;
-    }
-
-    .free-badge {
-        color: white;
-        background: linear-gradient(135deg, #475569, #64748b);
-    }
-
-    .pro-badge {
-        color: white;
-        background: linear-gradient(135deg, #2563eb, #3b82f6);
-    }
-
-    .premium-badge {
-        color: white;
-        background: linear-gradient(135deg, #7c3aed, #a855f7);
-    }
-
-    .price-card {
-        background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98));
         border: 1px solid #e5e7eb;
         border-radius: 24px;
         padding: 24px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-        min-height: 420px;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 18px;
     }
 
-    .price-card.featured {
-        border: 1px solid rgba(37,99,235,0.35);
-        box-shadow: 0 18px 40px rgba(37,99,235,0.14);
+    .nav-card {
+        background:
+            linear-gradient(180deg, rgba(255,255,255,1), rgba(248,250,252,1));
+        border: 1px solid #e5e7eb;
+        border-radius: 26px;
+        padding: 30px 24px;
+        box-shadow: var(--card-shadow);
+        text-align: center;
+        min-height: 235px;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .nav-card:hover {
         transform: translateY(-4px);
+        box-shadow: 0 24px 58px rgba(15, 23, 42, 0.12);
     }
 
-    .price-card.premium {
-        border: 1px solid rgba(124,58,237,0.35);
-        box-shadow: 0 18px 40px rgba(124,58,237,0.14);
+    .stats-card {
+        background: linear-gradient(180deg, rgba(255,255,255,1), rgba(248,250,252,1));
+        border: 1px solid #e5e7eb;
+        border-radius: 22px;
+        padding: 18px 18px 14px 18px;
+        box-shadow: 0 8px 22px rgba(15,23,42,0.06);
     }
 
-    .plan-chip {
+    .tier-card {
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,1));
+        border-radius: 28px;
+        padding: 26px;
+        min-height: 500px;
+        box-shadow: 0 16px 45px rgba(15,23,42,0.08);
+        border: 1px solid #e5e7eb;
+    }
+
+    .tier-card.pro {
+        border: 1px solid rgba(37,99,235,0.28);
+        box-shadow: 0 20px 50px rgba(37,99,235,0.12);
+        transform: translateY(-6px);
+    }
+
+    .tier-card.premium {
+        border: 1px solid rgba(124,58,237,0.28);
+        box-shadow: 0 20px 50px rgba(124,58,237,0.14);
+    }
+
+    .badge-free, .badge-pro, .badge-premium {
         display: inline-flex;
+        align-items: center;
+        gap: 8px;
         padding: 8px 13px;
         border-radius: 999px;
         font-size: 12px;
         font-weight: 800;
+        letter-spacing: 0.02em;
         margin-bottom: 14px;
     }
 
-    .plan-chip.free {
-        background: rgba(71,85,105,0.12);
-        color: #334155;
+    .badge-free {
+        color: white;
+        background: linear-gradient(135deg, #475569, #64748b);
     }
 
-    .plan-chip.pro {
-        background: rgba(37,99,235,0.12);
-        color: #1d4ed8;
+    .badge-pro {
+        color: white;
+        background: linear-gradient(135deg, #2563eb, #3b82f6);
     }
 
-    .plan-chip.premium {
-        background: rgba(124,58,237,0.12);
-        color: #7c3aed;
+    .badge-premium {
+        color: white;
+        background: linear-gradient(135deg, #7c3aed, #a855f7);
     }
 
     .price-big {
-        font-size: 46px;
-        font-weight: 800;
-        letter-spacing: -0.04em;
-        margin-bottom: 6px;
+        font-size: 48px;
+        line-height: 1;
+        font-weight: 900;
+        letter-spacing: -0.05em;
+        margin-bottom: 8px;
+        color: #0f172a;
     }
 
     .price-big span {
         font-size: 15px;
-        color: #64748b;
         font-weight: 700;
-        margin-left: 4px;
+        color: #64748b;
+        margin-left: 5px;
+    }
+
+    .small-muted {
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    .section-title {
+        font-size: 31px;
+        font-weight: 900;
+        color: #0f172a;
+        letter-spacing: -0.03em;
+        margin-bottom: 8px;
+    }
+
+    .subsection-title {
+        font-size: 24px;
+        font-weight: 850;
+        letter-spacing: -0.02em;
+        color: #0f172a;
+        margin-bottom: 8px;
     }
 
     .debate-box {
         background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
         border: 1px solid #dbeafe;
-        border-radius: 18px;
+        border-radius: 20px;
         padding: 18px;
         box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
         margin-bottom: 14px;
@@ -196,7 +229,7 @@ st.markdown("""
     .judge-box {
         background: linear-gradient(180deg, #f0fdf4 0%, #ecfeff 100%);
         border: 1px solid #bbf7d0;
-        border-radius: 18px;
+        border-radius: 20px;
         padding: 18px;
         box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
         margin-bottom: 14px;
@@ -204,44 +237,100 @@ st.markdown("""
 
     .premium-panel {
         background: linear-gradient(135deg, rgba(124,58,237,0.08), rgba(37,99,235,0.06));
-        border: 1px solid rgba(124,58,237,0.16);
-        border-radius: 18px;
+        border: 1px solid rgba(124,58,237,0.18);
+        border-radius: 20px;
         padding: 18px;
         margin-bottom: 14px;
+        box-shadow: 0 8px 24px rgba(124,58,237,0.06);
     }
 
-    .stButton>button {
-        border-radius: 14px;
+    .unlock-panel {
+        background: linear-gradient(135deg, rgba(37,99,235,0.06), rgba(236,72,153,0.04));
+        border: 1px solid rgba(37,99,235,0.12);
+        border-radius: 20px;
+        padding: 18px;
+    }
+
+    .mini-kpi {
+        background: rgba(255,255,255,0.82);
+        border: 1px solid rgba(255,255,255,0.8);
+        border-radius: 18px;
+        padding: 14px 16px;
+        box-shadow: 0 8px 22px rgba(15,23,42,0.06);
+    }
+
+    .pill {
+        display: inline-flex;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 12px;
         font-weight: 800;
-        height: 3.1em;
-        border: none;
+        margin-bottom: 12px;
     }
 
-    .stTextInput>div>div>input,
+    .pill.free {
+        background: rgba(71,85,105,0.12);
+        color: #334155;
+    }
+
+    .pill.pro {
+        background: rgba(37,99,235,0.12);
+        color: #1d4ed8;
+    }
+
+    .pill.premium {
+        background: rgba(124,58,237,0.12);
+        color: #7c3aed;
+    }
+
+    .stButton > button {
+        border-radius: 16px !important;
+        font-weight: 800 !important;
+        height: 3.15em !important;
+        border: none !important;
+        box-shadow: 0 8px 22px rgba(239, 68, 68, 0.14);
+    }
+
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #ef4444 0%, #f43f5e 100%) !important;
+        color: white !important;
+    }
+
+    .stButton > button[kind="secondary"] {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+        color: #0f172a !important;
+        border: 1px solid #e5e7eb !important;
+        box-shadow: 0 8px 20px rgba(15,23,42,0.06);
+    }
+
+    .stTextInput > div > div > input,
     .stTextArea textarea,
-    .stSelectbox>div>div {
-        border-radius: 12px;
+    .stSelectbox > div > div {
+        border-radius: 14px !important;
+        border: 1px solid #dbe4f0 !important;
     }
 
     div[data-testid="stMetric"] {
-        background: white;
+        background: linear-gradient(180deg, #ffffff, #f8fafc);
         border: 1px solid #e5e7eb;
         padding: 14px;
         border-radius: 18px;
-        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
     }
 
-    .muted {
-        color: #64748b;
+    .plan-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(148,163,184,0.35), transparent);
+        margin: 14px 0 12px 0;
+    }
+
+    .feature-note {
+        padding: 12px 14px;
+        border-radius: 14px;
         font-size: 14px;
-    }
-
-    .section-title {
-        font-size: 30px;
-        font-weight: 800;
-        letter-spacing: -0.03em;
-        margin-bottom: 10px;
-        color: #0f172a;
+        background: rgba(37,99,235,0.06);
+        border: 1px solid rgba(37,99,235,0.10);
+        color: #1e293b;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -265,13 +354,14 @@ PLAN_CONFIG = {
         "show_opportunity_cost": False,
         "show_success_drivers": False,
         "show_roadmap": False,
+        "show_exec_summary": False,
         "pdf_style": "basic",
         "pdf_name": "Basic Report",
         "features": [
             "3 decisions per day",
             "basic decision dashboard",
-            "basic PDF report",
-            "core recommendation"
+            "basic recommendation",
+            "basic PDF report"
         ]
     },
     "pro": {
@@ -286,6 +376,7 @@ PLAN_CONFIG = {
         "show_opportunity_cost": False,
         "show_success_drivers": True,
         "show_roadmap": False,
+        "show_exec_summary": True,
         "pdf_style": "pro",
         "pdf_name": "Pro Insight Report",
         "features": [
@@ -295,7 +386,8 @@ PLAN_CONFIG = {
             "confidence meter",
             "strategic insight",
             "hidden risks analysis",
-            "stronger PDF report"
+            "success drivers",
+            "enhanced PDF report"
         ]
     },
     "premium": {
@@ -310,6 +402,7 @@ PLAN_CONFIG = {
         "show_opportunity_cost": True,
         "show_success_drivers": True,
         "show_roadmap": True,
+        "show_exec_summary": True,
         "pdf_style": "premium",
         "pdf_name": "Premium Executive Report",
         "features": [
@@ -320,13 +413,13 @@ PLAN_CONFIG = {
             "opportunity cost analysis",
             "success drivers",
             "30-day action roadmap",
-            "executive-grade PDF report"
+            "executive-grade premium report"
         ]
     }
 }
 
 # =========================================================
-# SECRETS / CLIENTS
+# CLIENTS
 # =========================================================
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_ANON_KEY = st.secrets["SUPABASE_ANON_KEY"]
@@ -381,10 +474,23 @@ def logout_user():
         pass
 
 # =========================================================
-# UTILITIES
+# HELPERS
 # =========================================================
 def now_iso():
     return datetime.now(INDIA_TZ).isoformat()
+
+def clean_pdf_text(text):
+    text = str(text)
+    text = text.replace("₹", "Rs. ")
+    text = text.replace("–", "-")
+    text = text.replace("—", "-")
+    text = text.replace("’", "'")
+    text = text.replace("‘", "'")
+    text = text.replace("“", '"')
+    text = text.replace("”", '"')
+    text = text.replace("•", "-")
+    text = text.replace("→", "->")
+    return text
 
 def parse_json_response(raw_text: str) -> dict:
     text = raw_text.strip()
@@ -419,19 +525,6 @@ def safe_generate_json(prompt: str, error_title: str) -> dict:
         st.code(raw_text)
         st.stop()
 
-def clean_pdf_text(text):
-    text = str(text)
-    text = text.replace("₹", "Rs. ")
-    text = text.replace("–", "-")
-    text = text.replace("—", "-")
-    text = text.replace("’", "'")
-    text = text.replace("‘", "'")
-    text = text.replace("“", '"')
-    text = text.replace("”", '"')
-    text = text.replace("•", "-")
-    text = text.replace("→", "->")
-    return text
-
 def calculate_grade(score):
     try:
         score = float(str(score).replace("/10", "").strip())
@@ -455,8 +548,14 @@ def confidence_to_int(confidence_text):
     except Exception:
         return 0
 
+def format_usage(used, limit):
+    return f"{used}/Unlimited" if limit is None else f"{used}/{limit}"
+
+def get_plan_features(plan: str):
+    return PLAN_CONFIG.get(plan, PLAN_CONFIG["free"])
+
 # =========================================================
-# DATABASE HELPERS
+# DATABASE
 # =========================================================
 def get_profile():
     try:
@@ -496,19 +595,27 @@ def update_username(username: str):
 def ensure_subscription():
     try:
         result = admin_supabase.table("subscriptions").select("*").eq("user_id", st.session_state.user_id).limit(1).execute()
+
         if result.data:
             row = result.data[0]
-            plan = str(row.get("plan", "free")).lower()
+            plan = str(row.get("plan", "free")).strip().lower()
+            status = str(row.get("status", "active")).strip().lower()
+
             if plan not in PLAN_CONFIG:
-                try:
-                    admin_supabase.table("subscriptions").update({
-                        "plan": "free",
-                        "status": "active"
-                    }).eq("user_id", st.session_state.user_id).execute()
-                    row["plan"] = "free"
-                    row["status"] = "active"
-                except Exception:
-                    pass
+                plan = "free"
+            if status not in ["active", "inactive", "cancelled"]:
+                status = "active"
+
+            try:
+                admin_supabase.table("subscriptions").update({
+                    "plan": plan,
+                    "status": status
+                }).eq("user_id", st.session_state.user_id).execute()
+            except Exception:
+                pass
+
+            row["plan"] = plan
+            row["status"] = status
             return row
 
         payload = {
@@ -519,15 +626,21 @@ def ensure_subscription():
         }
         admin_supabase.table("subscriptions").insert(payload).execute()
         return payload
+
     except Exception:
         return {"plan": "free", "status": "active"}
 
 def get_subscription():
-    return ensure_subscription()
+    sub = ensure_subscription()
+    sub["plan"] = str(sub.get("plan", "free")).strip().lower()
+    sub["status"] = str(sub.get("status", "active")).strip().lower()
+    return sub
 
 def set_plan_for_testing(plan: str):
+    plan = str(plan).strip().lower()
     if plan not in PLAN_CONFIG:
         return False
+
     try:
         ensure_subscription()
         admin_supabase.table("subscriptions").update({
@@ -541,8 +654,21 @@ def set_plan_for_testing(plan: str):
 def get_or_create_usage():
     try:
         result = admin_supabase.table("usage_tracking").select("*").eq("user_id", st.session_state.user_id).execute()
+
         if result.data and len(result.data) > 0:
-            return result.data[0]
+            row = result.data[0]
+            if "reports_today" not in row or row["reports_today"] is None:
+                row["reports_today"] = 0
+            if "last_reset" not in row or not row["last_reset"]:
+                row["last_reset"] = now_iso()
+                try:
+                    admin_supabase.table("usage_tracking").update({
+                        "reports_today": row["reports_today"],
+                        "last_reset": row["last_reset"]
+                    }).eq("user_id", st.session_state.user_id).execute()
+                except Exception:
+                    pass
+            return row
 
         row = {
             "user_id": st.session_state.user_id,
@@ -551,6 +677,7 @@ def get_or_create_usage():
         }
         admin_supabase.table("usage_tracking").insert(row).execute()
         return row
+
     except Exception:
         return {
             "user_id": st.session_state.user_id,
@@ -576,6 +703,7 @@ def reset_usage_if_new_day():
             }).eq("user_id", st.session_state.user_id).execute()
         except Exception:
             pass
+
         usage["reports_today"] = 0
         usage["last_reset"] = now_iso()
 
@@ -586,8 +714,8 @@ def get_usage():
 
 def user_can_generate():
     sub = get_subscription()
-    plan = str(sub.get("plan", "free")).lower()
-    status = sub.get("status", "active")
+    plan = str(sub.get("plan", "free")).strip().lower()
+    status = str(sub.get("status", "active")).strip().lower()
     usage = get_usage()
     used = int(usage.get("reports_today", 0) or 0)
     limit = PLAN_CONFIG.get(plan, PLAN_CONFIG["free"])["limit"]
@@ -603,15 +731,25 @@ def user_can_generate():
 def increment_usage():
     usage = get_or_create_usage()
     used = int(usage.get("reports_today", 0) or 0)
+
     try:
         admin_supabase.table("usage_tracking").update({
             "reports_today": used + 1,
             "last_reset": now_iso()
         }).eq("user_id", st.session_state.user_id).execute()
     except Exception:
-        pass
+        try:
+            admin_supabase.table("usage_tracking").insert({
+                "user_id": st.session_state.user_id,
+                "reports_today": used + 1,
+                "last_reset": now_iso()
+            }).execute()
+        except Exception:
+            pass
 
 def save_report(question, decision_type, option_a, option_b, plan, report_data):
+    normalized_plan = str(plan).strip().lower()
+
     try:
         admin_supabase.table("reports").insert({
             "user_id": st.session_state.user_id,
@@ -619,7 +757,7 @@ def save_report(question, decision_type, option_a, option_b, plan, report_data):
             "question": question,
             "option_a": option_a if option_a else None,
             "option_b": option_b if option_b else None,
-            "plan": plan,
+            "plan": normalized_plan,
             "analysis": report_data
         }).execute()
     except Exception:
@@ -628,7 +766,7 @@ def save_report(question, decision_type, option_a, option_b, plan, report_data):
     increment_usage()
 
 # =========================================================
-# PDF ENGINE
+# PDF
 # =========================================================
 class DecedoPDF(FPDF):
     def footer(self):
@@ -676,13 +814,13 @@ def create_plan_pdf(report: dict, plan: str):
         report_name = "Basic Decision Report"
 
     pdf.set_fill_color(*accent)
-    pdf.rect(0, 0, 210, 26, style="F")
+    pdf.rect(0, 0, 210, 28, style="F")
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", "B", 19)
-    pdf.set_xy(10, 8)
+    pdf.set_xy(10, 9)
     pdf.cell(0, 8, clean_pdf_text(f"{APP_NAME} - {report_name}"))
 
-    pdf.ln(18)
+    pdf.ln(20)
     pdf.set_text_color(20, 24, 39)
     pdf.set_font("Arial", "", 11)
     pdf.cell(0, 8, clean_pdf_text(f"Generated: {datetime.now(INDIA_TZ).strftime('%d %b %Y, %I:%M %p IST')}"), ln=True)
@@ -741,6 +879,7 @@ def create_plan_pdf(report: dict, plan: str):
             if k in obf:
                 pdf.multi_cell(0, 7, clean_pdf_text(f"{k.replace('_', ' ').title()}: {obf[k]}"))
         pdf.ln(1)
+
     elif report.get("recommended_path_future"):
         rpf = report["recommended_path_future"]
         for k, v in rpf.items():
@@ -749,54 +888,71 @@ def create_plan_pdf(report: dict, plan: str):
     return pdf.output(dest="S").encode("latin-1")
 
 # =========================================================
-# PLAN HELPERS
+# UI HELPERS
 # =========================================================
-def get_plan_features(plan: str):
-    return PLAN_CONFIG.get(plan, PLAN_CONFIG["free"])
-
 def render_plan_badge(plan: str):
     if plan == "premium":
-        st.markdown('<div class="premium-badge">Premium</div>', unsafe_allow_html=True)
+        st.markdown('<div class="badge-premium">Premium</div>', unsafe_allow_html=True)
     elif plan == "pro":
-        st.markdown('<div class="pro-badge">Pro</div>', unsafe_allow_html=True)
+        st.markdown('<div class="badge-pro">Pro</div>', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="free-badge">Free</div>', unsafe_allow_html=True)
+        st.markdown('<div class="badge-free">Free</div>', unsafe_allow_html=True)
 
-def format_usage(used, limit):
-    return f"{used}/Unlimited" if limit is None else f"{used}/{limit}"
+def render_top_nav():
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        if st.button("← Back Home", use_container_width=True, type="primary", key="nav_home"):
+            st.session_state.current_page = "home"
+            st.rerun()
+    with c2:
+        if st.button("Open Profile", use_container_width=True, type="primary", key="nav_profile"):
+            st.session_state.current_page = "profile"
+            st.rerun()
+    with c3:
+        if st.button("Pricing", use_container_width=True, type="primary", key="nav_pricing"):
+            st.session_state.current_page = "pricing"
+            st.rerun()
+    with c4:
+        if st.button("Logout", use_container_width=True, type="primary", key="nav_logout"):
+            logout_user()
+            st.session_state.authenticated = False
+            st.session_state.user_email = None
+            st.session_state.user_id = None
+            st.session_state.current_page = "auth"
+            st.rerun()
 
 # =========================================================
-# PAGE RENDERERS
+# AUTH PAGE
 # =========================================================
 def render_auth():
     st.markdown("""
     <div class="hero">
-        <div style="font-size:38px;font-weight:900;">🧠 Decedo</div>
-        <div style="font-size:20px;font-weight:700;margin-top:6px;">
+        <div style="font-size:42px;font-weight:900;letter-spacing:-0.04em;">🧠 Decedo</div>
+        <div style="font-size:21px;font-weight:800;margin-top:6px;">
             AI Decision Operating System
         </div>
-        <div style="font-size:15px;opacity:0.95;margin-top:10px;max-width:760px;">
-            Structured reasoning, AI debate, strategic insight, simulation, and premium reports built for serious decision-makers.
+        <div style="font-size:15px;opacity:0.96;margin-top:10px;max-width:760px;">
+            Structured reasoning, AI debate, simulation, strategic insight, and premium-tier decision reports.
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    left, right = st.columns([1.15, 0.85], gap="large")
+    left, right = st.columns([1.1, 0.9], gap="large")
 
     with left:
         st.markdown("""
-        <div class="card">
+        <div class="glass-card">
             <div class="section-title">Why Decedo feels premium</div>
             <p>• AI decision intelligence dashboard</p>
-            <p>• plan-based value differentiation</p>
-            <p>• scenario simulation and strategic insight</p>
-            <p>• premium downloadable reports</p>
-            <p>• future-ready SaaS pricing system</p>
+            <p>• plan-aware feature differentiation</p>
+            <p>• richer Pro and Premium value</p>
+            <p>• scenario simulation and premium reports</p>
+            <p>• SaaS-ready structure before payment integration</p>
         </div>
         """, unsafe_allow_html=True)
 
     with right:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="solid-card">', unsafe_allow_html=True)
 
         tab1, tab2 = st.tabs(["Login", "Create Account"])
 
@@ -805,15 +961,17 @@ def render_auth():
             login_email = st.text_input("Email", key="login_email")
             login_password = st.text_input("Password", type="password", key="login_password")
 
-            if st.button("Login", type="primary", use_container_width=True):
+            if st.button("Login", type="primary", use_container_width=True, key="login_btn"):
                 ok, result = login_user(login_email, login_password)
                 if ok and result.user:
                     st.session_state.authenticated = True
                     st.session_state.user_email = result.user.email
                     st.session_state.user_id = result.user.id
+
                     ensure_profile()
                     ensure_subscription()
                     get_or_create_usage()
+
                     st.session_state.current_page = "home"
                     st.rerun()
                 else:
@@ -825,7 +983,7 @@ def render_auth():
             signup_password = st.text_input("Password", type="password", key="signup_password")
             signup_confirm = st.text_input("Confirm Password", type="password", key="signup_confirm")
 
-            if st.button("Create Account", use_container_width=True):
+            if st.button("Create Account", use_container_width=True, type="primary", key="signup_btn"):
                 if signup_password != signup_confirm:
                     st.error("Passwords do not match.")
                 else:
@@ -837,9 +995,12 @@ def render_auth():
 
         st.markdown('</div>', unsafe_allow_html=True)
 
+# =========================================================
+# HOME PAGE
+# =========================================================
 def render_home():
     sub = get_subscription()
-    plan = str(sub.get("plan", "free")).lower()
+    plan = str(sub.get("plan", "free")).strip().lower()
     plan_info = get_plan_features(plan)
     usage = get_usage()
     used_today = int(usage.get("reports_today", 0) or 0)
@@ -847,11 +1008,11 @@ def render_home():
 
     st.markdown("""
     <div class="hero">
-        <div style="font-size:38px;font-weight:900;">🧠 Decedo</div>
-        <div style="font-size:20px;font-weight:700;margin-top:6px;">
+        <div style="font-size:42px;font-weight:900;letter-spacing:-0.04em;">🧠 Decedo</div>
+        <div style="font-size:21px;font-weight:800;margin-top:6px;">
             AI Decision Operating System
         </div>
-        <div style="font-size:15px;opacity:0.95;margin-top:10px;max-width:760px;">
+        <div style="font-size:15px;opacity:0.96;margin-top:10px;max-width:760px;">
             Premium AI decision intelligence for ambitious people.
         </div>
     </div>
@@ -861,53 +1022,65 @@ def render_home():
     st.success(f"Logged in as {st.session_state.user_email}")
     st.info(f"Plan: {plan.title()} • Usage Today: {usage_text}")
 
-    stats1, stats2, stats3 = st.columns(3)
-    stats1.metric("Current Plan", plan.title())
-    stats2.metric("Usage Today", usage_text)
-    stats3.metric("PDF Tier", plan_info["pdf_name"])
+    k1, k2, k3 = st.columns(3)
+    with k1:
+        st.markdown('<div class="stats-card">', unsafe_allow_html=True)
+        st.metric("Current Plan", plan.title())
+        st.markdown('</div>', unsafe_allow_html=True)
+    with k2:
+        st.markdown('<div class="stats-card">', unsafe_allow_html=True)
+        st.metric("Usage Today", usage_text)
+        st.markdown('</div>', unsafe_allow_html=True)
+    with k3:
+        st.markdown('<div class="stats-card">', unsafe_allow_html=True)
+        st.metric("PDF Tier", plan_info["pdf_name"])
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns(3, gap="large")
+    c1, c2, c3 = st.columns(3, gap="large")
 
-    with col1:
+    with c1:
         st.markdown("""
         <div class="nav-card">
-            <div style="font-size:30px;">👤</div>
-            <h3>Profile</h3>
-            <p>Manage username, plan, and account overview.</p>
+            <div style="font-size:34px;">👤</div>
+            <h3 style="margin-top:8px;">Profile</h3>
+            <p style="color:#64748b;">Manage username, plan, and account overview.</p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Open Profile", use_container_width=True, type="primary"):
+        if st.button("Open Profile", use_container_width=True, type="primary", key="home_profile_btn"):
             st.session_state.current_page = "profile"
             st.rerun()
 
-    with col2:
+    with c2:
         st.markdown("""
         <div class="nav-card">
-            <div style="font-size:30px;">🔬</div>
-            <h3>Decision Lab</h3>
-            <p>Run plan-aware analysis, simulation, and reports.</p>
+            <div style="font-size:34px;">🔬</div>
+            <h3 style="margin-top:8px;">Decision Lab</h3>
+            <p style="color:#64748b;">Run plan-aware analysis, simulation, and premium reports.</p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Open Decision Lab", use_container_width=True):
+        if st.button("Open Decision Lab", use_container_width=True, type="primary", key="home_lab_btn"):
             st.session_state.current_page = "lab"
             st.rerun()
 
-    with col3:
+    with c3:
         st.markdown("""
         <div class="nav-card">
-            <div style="font-size:30px;">💳</div>
-            <h3>Pricing</h3>
-            <p>See Free, Pro, and Premium plan value.</p>
+            <div style="font-size:34px;">💳</div>
+            <h3 style="margin-top:8px;">Pricing</h3>
+            <p style="color:#64748b;">See Free, Pro, and Premium value architecture.</p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("View Pricing", use_container_width=True):
+        if st.button("View Pricing", use_container_width=True, type="primary", key="home_pricing_btn"):
             st.session_state.current_page = "pricing"
             st.rerun()
 
+# =========================================================
+# PROFILE PAGE
+# =========================================================
 def render_profile():
     profile = ensure_profile()
     sub = get_subscription()
-    plan = str(sub.get("plan", "free")).lower()
+    plan = str(sub.get("plan", "free")).strip().lower()
     plan_info = get_plan_features(plan)
     usage = get_usage()
     used_today = int(usage.get("reports_today", 0) or 0)
@@ -917,8 +1090,8 @@ def render_profile():
 
     st.markdown(f"""
     <div class="hero">
-        <div style="font-size:34px;font-weight:900;">👤 Profile</div>
-        <div style="font-size:18px;font-weight:700;margin-top:6px;">
+        <div style="font-size:38px;font-weight:900;">👤 Profile</div>
+        <div style="font-size:19px;font-weight:800;margin-top:6px;">
             {username_value if username_value else "Set your Decedo username"}
         </div>
         <div style="font-size:14px;opacity:0.95;margin-top:8px;">
@@ -927,35 +1100,19 @@ def render_profile():
     </div>
     """, unsafe_allow_html=True)
 
-    top1, top2, top3, top4 = st.columns(4)
-    with top1:
-        if st.button("← Back Home", use_container_width=True):
-            st.session_state.current_page = "home"
-            st.rerun()
-    with top2:
-        if st.button("Decision Lab", use_container_width=True):
-            st.session_state.current_page = "lab"
-            st.rerun()
-    with top3:
-        if st.button("Pricing", use_container_width=True):
-            st.session_state.current_page = "pricing"
-            st.rerun()
-    with top4:
-        if st.button("Logout", use_container_width=True):
-            logout_user()
-            st.session_state.authenticated = False
-            st.session_state.user_email = None
-            st.session_state.user_id = None
-            st.session_state.current_page = "auth"
-            st.rerun()
+    render_top_nav()
 
     left, right = st.columns([1.1, 0.9], gap="large")
 
     with left:
-        st.markdown('<div class="soft-card">', unsafe_allow_html=True)
-        st.markdown("### Account identity")
-        new_username = st.text_input("Choose your username", value=username_value, placeholder="Example: swayam")
-        if st.button("Save Username", use_container_width=True):
+        st.markdown('<div class="solid-card">', unsafe_allow_html=True)
+        st.markdown("### Account Identity")
+        new_username = st.text_input(
+            "Choose your username",
+            value=username_value,
+            placeholder="Example: swayam"
+        )
+        if st.button("Save Username", use_container_width=True, type="primary", key="save_username_btn"):
             if new_username.strip():
                 if update_username(new_username):
                     st.success("Username updated successfully.")
@@ -968,123 +1125,103 @@ def render_profile():
         st.markdown('</div>', unsafe_allow_html=True)
 
     with right:
-        st.markdown('<div class="soft-card">', unsafe_allow_html=True)
-        st.markdown("### Account overview")
+        st.markdown('<div class="solid-card">', unsafe_allow_html=True)
+        st.markdown("### Account Overview")
         render_plan_badge(plan)
         st.markdown(f"**Plan:** {plan.title()}")
-        st.markdown(f"**Status:** {sub.get('status', 'active').title()}")
+        st.markdown(f"**Status:** {str(sub.get('status', 'active')).title()}")
         st.markdown(f"**Usage Today:** {usage_text}")
         st.markdown(f"**Report Tier:** {plan_info['pdf_name']}")
         st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown('<div class="soft-card">', unsafe_allow_html=True)
-        st.markdown("### Current plan features")
+        st.markdown('<div class="solid-card">', unsafe_allow_html=True)
+        st.markdown("### Current Plan Features")
         for feat in plan_info["features"]:
             st.write(f"✓ {feat}")
         st.markdown('</div>', unsafe_allow_html=True)
 
+# =========================================================
+# PRICING PAGE
+# =========================================================
 def render_pricing():
     sub = get_subscription()
-    current_plan = str(sub.get("plan", "free")).lower()
+    current_plan = str(sub.get("plan", "free")).strip().lower()
 
     st.markdown("""
     <div class="hero">
-        <div style="font-size:36px;font-weight:900;">💳 Decedo Pricing</div>
-        <div style="font-size:18px;font-weight:700;margin-top:6px;">
-            Build for value, not just volume
+        <div style="font-size:39px;font-weight:900;">💳 Decedo Pricing</div>
+        <div style="font-size:20px;font-weight:800;margin-top:6px;">
+            Built for value, not just volume
         </div>
         <div style="font-size:14px;opacity:0.95;margin-top:8px;max-width:760px;">
-            Payments will be connected later. For now, upgrade buttons are enabled in testing mode so you can test plan-specific UX.
+            Payments are not integrated yet. These upgrade actions are testing-mode plan switches so you can fully test V7 UX.
         </div>
     </div>
     """, unsafe_allow_html=True)
 
     nav1, nav2, nav3 = st.columns(3)
     with nav1:
-        if st.button("← Back Home", use_container_width=True):
+        if st.button("← Back Home", use_container_width=True, type="primary", key="pricing_home"):
             st.session_state.current_page = "home"
             st.rerun()
     with nav2:
-        if st.button("Open Profile", use_container_width=True):
+        if st.button("Open Profile", use_container_width=True, type="primary", key="pricing_profile"):
             st.session_state.current_page = "profile"
             st.rerun()
     with nav3:
-        if st.button("Open Decision Lab", use_container_width=True):
+        if st.button("Open Decision Lab", use_container_width=True, type="primary", key="pricing_lab"):
             st.session_state.current_page = "lab"
             st.rerun()
 
     c1, c2, c3 = st.columns(3, gap="large")
 
-    def price_card(col, plan_key, featured=False, premium=False):
+    def render_tier(col, plan_key, class_name=""):
         info = PLAN_CONFIG[plan_key]
-        card_class = "price-card"
-        if featured:
-            card_class += " featured"
-        if premium:
-            card_class += " premium"
 
         with col:
-            st.markdown(f'<div class="{card_class}">', unsafe_allow_html=True)
-            chip_class = "free" if plan_key == "free" else ("pro" if plan_key == "pro" else "premium")
-            chip_text = "Current Plan" if current_plan == plan_key else info["label"]
-            st.markdown(f'<div class="plan-chip {chip_class}">{chip_text}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="tier-card {class_name}">', unsafe_allow_html=True)
+
+            pill_class = "free" if plan_key == "free" else ("pro" if plan_key == "pro" else "premium")
+            pill_text = "Current Plan" if current_plan == plan_key else info["label"]
+            st.markdown(f'<div class="pill {pill_class}">{pill_text}</div>', unsafe_allow_html=True)
+
             st.markdown(f"## {info['label']}")
             st.markdown(f'<div class="price-big">{info["price"]}<span>/month</span></div>', unsafe_allow_html=True)
 
             if plan_key == "free":
-                st.markdown('<div class="muted">Perfect to experience Decedo.</div>', unsafe_allow_html=True)
+                st.markdown('<div class="small-muted">Perfect to experience Decedo.</div>', unsafe_allow_html=True)
             elif plan_key == "pro":
-                st.markdown('<div class="muted">For ambitious users who make decisions frequently.</div>', unsafe_allow_html=True)
+                st.markdown('<div class="small-muted">For ambitious users who make decisions frequently.</div>', unsafe_allow_html=True)
             else:
-                st.markdown('<div class="muted">For founders, power users, and high-stakes decisions.</div>', unsafe_allow_html=True)
+                st.markdown('<div class="small-muted">For founders, operators, and high-stakes decision-makers.</div>', unsafe_allow_html=True)
 
-            st.markdown("")
+            st.markdown('<div class="plan-divider"></div>', unsafe_allow_html=True)
+
             for feat in info["features"]:
                 st.write(f"✓ {feat}")
 
             st.markdown("")
+
             if current_plan == plan_key:
                 st.success("You are currently on this plan.")
             else:
-                button_label = "Start Free" if plan_key == "free" else (f"Upgrade to {info['label']} (Testing)" if plan_key == "pro" else "Go Premium (Testing)")
-                if st.button(button_label, key=f"plan_{plan_key}", use_container_width=True):
+                label = "Start Free" if plan_key == "free" else (f"Upgrade to {info['label']} (Testing)" if plan_key == "pro" else "Go Premium (Testing)")
+                if st.button(label, key=f"switch_{plan_key}", use_container_width=True, type="primary"):
                     ok = set_plan_for_testing(plan_key)
                     if ok:
-                        st.success(f"{info['label']} plan activated in testing mode.")
+                        st.success(f"{info['label']} activated in testing mode.")
                         st.rerun()
                     else:
                         st.error("Could not switch plan.")
+
             st.markdown('</div>', unsafe_allow_html=True)
 
-    price_card(c1, "free")
-    price_card(c2, "pro", featured=True)
-    price_card(c3, "premium", premium=True)
-
-def render_auth_buttons_row():
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        if st.button("← Back Home", use_container_width=True):
-            st.session_state.current_page = "home"
-            st.rerun()
-    with c2:
-        if st.button("Open Profile", use_container_width=True):
-            st.session_state.current_page = "profile"
-            st.rerun()
-    with c3:
-        if st.button("Pricing", use_container_width=True):
-            st.session_state.current_page = "pricing"
-            st.rerun()
-    with c4:
-        if st.button("Logout", use_container_width=True):
-            logout_user()
-            st.session_state.authenticated = False
-            st.session_state.user_email = None
-            st.session_state.user_id = None
-            st.session_state.current_page = "auth"
-            st.rerun()
+    render_tier(c1, "free")
+    render_tier(c2, "pro", "pro")
+    render_tier(c3, "premium", "premium")
 
 # =========================================================
-# REPORT GENERATION
+# AI PROMPTS
 # =========================================================
 def build_analysis_prompt(plan: str, decision_type: str, question: str, option_a: str, option_b: str):
     cfg = PLAN_CONFIG[plan]
@@ -1100,6 +1237,8 @@ def build_analysis_prompt(plan: str, decision_type: str, question: str, option_a
             premium_extra += '\n  "success_drivers": ["driver 1", "driver 2", "driver 3"],'
         if cfg["show_roadmap"]:
             premium_extra += '\n  "roadmap_30_days": ["week 1 action", "week 2 action", "week 3 action", "week 4 action"],'
+        if cfg["show_exec_summary"]:
+            premium_extra += '\n  "executive_summary": "1 short executive style summary",' 
 
         debate_fields = ""
         if cfg["show_debate"]:
@@ -1111,7 +1250,7 @@ def build_analysis_prompt(plan: str, decision_type: str, question: str, option_a
         return f"""
 You are Decedo, an AI Decision Operating System.
 
-Analyze this comparison with sharp, practical, high-quality reasoning.
+Analyze this comparison with sharp, practical, premium-quality reasoning.
 
 Decision Type:
 {decision_type}
@@ -1156,6 +1295,8 @@ No explanation outside JSON.
             premium_extra += '\n  "success_drivers": ["driver 1", "driver 2", "driver 3"],'
         if cfg["show_roadmap"]:
             premium_extra += '\n  "roadmap_30_days": ["week 1 action", "week 2 action", "week 3 action", "week 4 action"],'
+        if cfg["show_exec_summary"]:
+            premium_extra += '\n  "executive_summary": "1 short executive style summary",' 
 
         verdict = ""
         if cfg["show_debate"]:
@@ -1312,11 +1453,11 @@ No explanation outside JSON.
 """
 
 # =========================================================
-# LAB
+# LAB PAGE
 # =========================================================
 def render_lab():
     sub = get_subscription()
-    plan = str(sub.get("plan", "free")).lower()
+    plan = str(sub.get("plan", "free")).strip().lower()
     cfg = get_plan_features(plan)
     usage = get_usage()
     used_today = int(usage.get("reports_today", 0) or 0)
@@ -1329,9 +1470,9 @@ def render_lab():
 
     st.markdown(f"""
     <div class="hero">
-        <div style="font-size:34px;font-weight:900;">🔬 Decision Lab</div>
-        <div style="font-size:18px;font-weight:700;margin-top:6px;">
-            Premium AI decision analysis built around your current plan
+        <div style="font-size:38px;font-weight:900;">🔬 Decision Lab</div>
+        <div style="font-size:19px;font-weight:800;margin-top:6px;">
+            Premium AI decision analysis based on your current plan
         </div>
         <div style="font-size:14px;opacity:0.95;margin-top:8px;">
             Profile: {username} • Plan: {plan.title()} • Usage Today: {usage_text}
@@ -1339,38 +1480,40 @@ def render_lab():
     </div>
     """, unsafe_allow_html=True)
 
-    render_auth_buttons_row()
+    render_top_nav()
 
     if cfg["limit"] is not None and used_today >= cfg["limit"]:
-        st.error(f"⚠ You have reached your {plan.title()} daily limit.")
-        st.info("Upgrade your plan from the Pricing page to continue.")
+        st.error(f"You have reached your {plan.title()} daily limit.")
+        st.info("Upgrade from the Pricing page to continue.")
         return
 
-    left, right = st.columns([1.1, 0.9], gap="large")
+    left, right = st.columns([1.06, 0.94], gap="large")
 
     with left:
-        st.markdown('<div class="soft-card">', unsafe_allow_html=True)
+        st.markdown('<div class="solid-card">', unsafe_allow_html=True)
         st.markdown("### Decision Input")
         decision_type = st.selectbox("Decision Type", ["Career", "Business", "Investment", "Life", "Pricing", "Product"])
         option_a = st.text_input("Option A (optional)", placeholder="Example: Price 499")
         option_b = st.text_input("Option B (optional)", placeholder="Example: Price 599")
         question = st.text_area("Decision Question", placeholder="Example: Which price should I launch at?")
-        analyze = st.button("Analyze Decision", type="primary", use_container_width=True)
+        analyze = st.button("Analyze Decision", type="primary", use_container_width=True, key="analyze_btn")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with right:
-        st.markdown('<div class="soft-card">', unsafe_allow_html=True)
-        st.markdown("### Your current plan unlocks")
+        st.markdown('<div class="solid-card">', unsafe_allow_html=True)
+        st.markdown("### Your Current Plan Unlocks")
+        st.markdown('<div class="unlock-panel">', unsafe_allow_html=True)
         for feat in cfg["features"]:
             st.write(f"✓ {feat}")
+        st.markdown('</div>', unsafe_allow_html=True)
+
         st.markdown("")
         if plan == "free":
-            st.info("Upgrade to Pro for AI debate, confidence meter, and full simulations.")
+            st.markdown('<div class="feature-note">Upgrade to Pro for AI debate, confidence meter, strategic insight, and full scenario simulation.</div>', unsafe_allow_html=True)
         elif plan == "pro":
-            st.info("Upgrade to Premium for opportunity cost and 30-day roadmap.")
+            st.markdown('<div class="feature-note">Upgrade to Premium for opportunity cost, 30-day roadmap, and executive-grade report depth.</div>', unsafe_allow_html=True)
         else:
             st.success("You have the full Premium stack enabled.")
-        st.markdown('</div>', unsafe_allow_html=True)
 
     if not analyze:
         return
@@ -1405,11 +1548,11 @@ def render_lab():
     risk_lens = analysis_data.get("risk_lens", "")
     growth_lens = analysis_data.get("growth_lens", "")
     why_points = analysis_data.get("why", [])
-
     hidden_risks = analysis_data.get("hidden_risks", [])
     opportunity_cost = analysis_data.get("opportunity_cost", "")
     success_drivers = analysis_data.get("success_drivers", [])
     roadmap_30_days = analysis_data.get("roadmap_30_days", [])
+    executive_summary = analysis_data.get("executive_summary", "")
 
     with st.spinner("Simulating future outcomes..."):
         scenario_prompt = build_scenario_prompt(plan, decision_type, question, summary, option_a, option_b)
@@ -1453,7 +1596,8 @@ def render_lab():
         "opportunity_cost": opportunity_cost,
         "success_drivers": success_drivers,
         "roadmap_30_days": roadmap_30_days,
-        "quick_outlook": quick_outlook
+        "quick_outlook": quick_outlook,
+        "executive_summary": executive_summary
     }
 
     save_report(question, decision_type, option_a, option_b, plan, report)
@@ -1467,19 +1611,25 @@ def render_lab():
     st.markdown("## 📊 Decision Dashboard")
     st.info(summary)
 
-    metrics = st.columns(5)
-    metrics[0].metric("Best Choice", best_option)
-    metrics[1].metric("Risk Level", risk_level)
-    metrics[2].metric("Score", decision_score)
-    metrics[3].metric("Confidence", confidence_level)
-    metrics[4].metric("Grade", decision_grade)
+    m1, m2, m3, m4, m5 = st.columns(5)
+    m1.metric("Best Choice", best_option)
+    m2.metric("Risk Level", risk_level)
+    m3.metric("Score", decision_score)
+    m4.metric("Confidence", confidence_level)
+    m5.metric("Grade", decision_grade)
+
+    if executive_summary and cfg["show_exec_summary"]:
+        st.markdown("### Executive Summary")
+        st.markdown('<div class="premium-panel">', unsafe_allow_html=True)
+        st.write(executive_summary)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     if compare_mode and option_a_score and option_b_score:
-        score1, score2 = st.columns(2)
-        with score1:
+        s1, s2 = st.columns(2)
+        with s1:
             st.metric("Option A Score", option_a_score)
             st.caption(option_a)
-        with score2:
+        with s2:
             st.metric("Option B Score", option_b_score)
             st.caption(option_b)
 
@@ -1564,14 +1714,14 @@ def render_lab():
     st.markdown("## 🔮 Future Simulation")
     if cfg["show_scenarios"]:
         if option_a_future and option_b_future:
-            s1, s2 = st.columns(2)
-            with s1:
+            f1, f2 = st.columns(2)
+            with f1:
                 st.markdown("### Option A Future")
                 st.write(f"**{option_a}**")
                 st.write(f"**3 Months:** {option_a_future.get('3_months', 'Not available')}")
                 st.write(f"**1 Year:** {option_a_future.get('1_year', 'Not available')}")
                 st.write(f"**5 Years:** {option_a_future.get('5_years', 'Not available')}")
-            with s2:
+            with f2:
                 st.markdown("### Option B Future")
                 st.write(f"**{option_b}**")
                 st.write(f"**3 Months:** {option_b_future.get('3_months', 'Not available')}")
