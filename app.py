@@ -360,7 +360,19 @@ def confidence_to_int(confidence_text):
         return 0
 
 def clean_pdf_text(text):
-    return str(text).replace("–", "-").replace("—", "-").replace("’", "'").replace("•", "-")
+    text = str(text)
+    
+    # Fix unsupported symbols
+    text = text.replace("₹", "Rs. ")
+    text = text.replace("–", "-")
+    text = text.replace("—", "-")
+    text = text.replace("’", "'")
+    text = text.replace("‘", "'")
+    text = text.replace("“", '"')
+    text = text.replace("”", '"')
+    text = text.replace("•", "-")
+    
+    return text
 
 class PremiumPDF(FPDF):
     def footer(self):
