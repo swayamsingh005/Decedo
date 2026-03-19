@@ -1724,6 +1724,7 @@ def render_lab():
             else "Upgrade to Pro for full 3-month, 1-year and 5-year scenario simulation."
         )
 
+   # PDF Download
     pdf_bytes = create_plan_pdf(report, plan)
     st.download_button(
         label=f"Download {cfg['pdf_name']} (PDF)",
@@ -1732,20 +1733,28 @@ def render_lab():
         mime="application/pdf",
         use_container_width=True,
     )
- if option_a and option_b:
-    st.markdown("## Your Final Decision")
 
-    col1, col2 = st.columns(2)
+    # ------------------------------
+    # Decision Selection (V8 Feature)
+    # ------------------------------
+    try:
+        if option_a and option_b:
+            st.markdown("## 🎯 Your Final Decision")
 
-    with col1:
-        if st.button("Choose Option A", use_container_width=True, type="primary", key="choose_a_btn"):
-            save_decision_history(question, decision_type, option_a, option_b, "A")
-            st.success("Option A saved successfully!")
+            col1, col2 = st.columns(2)
 
-    with col2:
-        if st.button("Choose Option B", use_container_width=True, type="primary", key="choose_b_btn"):
-            save_decision_history(question, decision_type, option_a, option_b, "B")
-            st.success("Option B saved successfully!")
+            with col1:
+                if st.button("Choose Option A", use_container_width=True, type="primary", key="choose_a_btn"):
+                    save_decision_history(question, decision_type, option_a, option_b, "A")
+                    st.success("✅ Option A saved!")
+
+            with col2:
+                if st.button("Choose Option B", use_container_width=True, type="primary", key="choose_b_btn"):
+                    save_decision_history(question, decision_type, option_a, option_b, "B")
+                    st.success("✅ Option B saved!")
+
+    except Exception as e:
+        st.error(f"Error saving decision: {e}")
 
 # =========================================================
 # ROUTER
