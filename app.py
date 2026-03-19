@@ -571,7 +571,15 @@ def ensure_profile():
     }
     admin_supabase.table("profiles").upsert(payload).execute()
     return get_profile()
-
+def save_decision_history(question, decision_type, option_a, option_b, selected_option):
+    admin_supabase.table("decision_history").insert({
+        "user_id": st.session_state.user_id,
+        "question": question,
+        "decision_type": decision_type,
+        "option_a": option_a if option_a else None,
+        "option_b": option_b if option_b else None,
+        "selected_option": selected_option
+    }).execute()
 
 def update_username(username: str):
     admin_supabase.table("profiles").update(
@@ -1724,7 +1732,20 @@ def render_lab():
         mime="application/pdf",
         use_container_width=True,
     )
+ if option_a and option_b:
+    st.markdown("## Your Final Decision")
 
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("Choose Option A", use_container_width=True, type="primary", key="choose_a_btn"):
+            save_decision_history(question, decision_type, option_a, option_b, "A")
+            st.success("Option A saved successfully!")
+
+    with col2:
+        if st.button("Choose Option B", use_container_width=True, type="primary", key="choose_b_btn"):
+            save_decision_history(question, decision_type, option_a, option_b, "B")
+            st.success("Option B saved successfully!")
 
 # =========================================================
 # ROUTER
